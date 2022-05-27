@@ -1827,5 +1827,5 @@ void loop()
     }
   // checkSwitches();
   checkEncoder();
-  //CPUMonitor();
+  // CPUMonitor();
 }
