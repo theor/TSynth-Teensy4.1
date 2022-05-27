@@ -1447,7 +1447,7 @@ void checkMux()
 
 void checkVolumePot()
 {
-  volumeRead = adc->adc0->analogRead(VOLUME_POT);
+  volumeRead = 4095;// adc->adc0->analogRead(VOLUME_POT);
   if (volumeRead > (volumePrevious + QUANTISE_FACTOR) || volumeRead < (volumePrevious - QUANTISE_FACTOR))
   {
     volumePrevious = volumeRead;
@@ -1810,13 +1810,22 @@ void loop()
 {
   // USB HOST MIDI Class Compliant
   myusb.Task();
-  midi1.read(midiChannel);
+  midi1.read();
   // USB Client MIDI
-  usbMIDI.read(midiChannel);
+  usbMIDI.read();
   // MIDI 5 Pin DIN
-  MIDI.read(midiChannel);
-  checkMux();
-  checkSwitches();
+  MIDI.read();
+  // checkMux();
+  
+    checkVolumePot(); // Check here
+    if (!firstPatchLoaded)
+    {
+      recallPatch(patchNo); // Load first patch after all controls read
+      firstPatchLoaded = true;
+      global.sgtl5000_1.unmuteHeadphone();
+      global.sgtl5000_1.unmuteLineout();
+    }
+  // checkSwitches();
   checkEncoder();
   //CPUMonitor();
 }
