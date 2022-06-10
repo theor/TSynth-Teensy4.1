@@ -72,7 +72,7 @@ ADC *adc = new ADC();
 #define BACKLIGHT 6
 
 #define MUXCHANNELS 16
-#define QUANTISE_FACTOR 15// Sets a tolerance of noise on the ADC. 15 is 4 bits
+#define QUANTISE_FACTOR 255// Sets a tolerance of noise on the ADC. 15 is 4 bits
 
 #define DEBOUNCE 30
 

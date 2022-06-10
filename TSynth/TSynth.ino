@@ -1447,7 +1447,7 @@ void checkMux()
 
 void checkVolumePot()
 {
-  volumeRead = 4095;// adc->adc0->analogRead(VOLUME_POT);
+  volumeRead = adc->adc0->analogRead(VOLUME_POT);
   if (volumeRead > (volumePrevious + QUANTISE_FACTOR) || volumeRead < (volumePrevious - QUANTISE_FACTOR))
   {
     volumePrevious = volumeRead;
