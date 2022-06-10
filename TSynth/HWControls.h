@@ -9,12 +9,12 @@
 ADC *adc = new ADC();
 
 //Teensy 4.1 - Mux Pins
-#define MUX_0 4//28
+#define MUX_0 28
 #define MUX_1 32
 #define MUX_2 40
 #define MUX_3 25
-#define MUX1_S A14 //38
-#define MUX2_S A17 //41
+#define MUX1_S A14
+#define MUX2_S A17
 //Mux 1 Connections
 #define MUX1_noiseLevel 0
 #define MUX1_pitchLfoRate 1
@@ -51,18 +51,18 @@ ADC *adc = new ADC();
 #define MUX2_filterLFOWaveform 15
 
 //Teensy 4.1 Pins
-#define OSC_FX_SW 17 //33
+#define OSC_FX_SW 33
 #define FILTER_LFO_RETRIG_SW 39
 #define UNISON_SW 36
 #define TEMPO_SW 16
-#define RECALL_SW 33 //17
+#define RECALL_SW 17
 #define SAVE_SW 30
-#define SETTINGS_SW 5 //29
+#define SETTINGS_SW 29
 #define BACK_SW 31
-#define VOLUME_POT A10 // 24
+#define VOLUME_POT A10
 
-#define ENCODER_PINA 28 //4
-#define ENCODER_PINB 29 //5
+#define ENCODER_PINA 4
+#define ENCODER_PINB 5
 
 #define RETRIG_LED 34
 #define TEMPO_LED 35
