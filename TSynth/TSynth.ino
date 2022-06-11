@@ -307,6 +307,49 @@ FLASHMEM String getWaveformStr(int value)
   }
 }
 
+FLASHMEM int cycleWaveformA(bool next) {
+    auto val = groupvec[activeGroupIndex]->getWaveformA();
+    if(next) {
+        switch(val) {
+            case WAVEFORM_SILENT:
+                return WAVEFORM_TRIANGLE;
+            case WAVEFORM_TRIANGLE:
+                return WAVEFORM_BANDLIMIT_SQUARE;
+            case WAVEFORM_BANDLIMIT_SQUARE:
+                return WAVEFORM_BANDLIMIT_SAWTOOTH;
+            case WAVEFORM_BANDLIMIT_SAWTOOTH:
+                return WAVEFORM_BANDLIMIT_PULSE;
+            case WAVEFORM_BANDLIMIT_PULSE:
+                return WAVEFORM_TRIANGLE_VARIABLE;
+            case WAVEFORM_TRIANGLE_VARIABLE:
+                return WAVEFORM_PARABOLIC;
+            case WAVEFORM_PARABOLIC:
+                return WAVEFORM_HARMONIC;
+            case WAVEFORM_HARMONIC:
+                return WAVEFORM_SILENT;
+        }
+    } else {
+        switch(val) {
+            case WAVEFORM_TRIANGLE:
+                return WAVEFORM_SILENT;
+            case WAVEFORM_BANDLIMIT_SQUARE:
+                return WAVEFORM_TRIANGLE;
+            case WAVEFORM_BANDLIMIT_SAWTOOTH:
+                return WAVEFORM_BANDLIMIT_SQUARE;
+            case WAVEFORM_BANDLIMIT_PULSE:
+                return WAVEFORM_BANDLIMIT_SAWTOOTH;
+            case WAVEFORM_TRIANGLE_VARIABLE:
+                return WAVEFORM_BANDLIMIT_PULSE;
+            case WAVEFORM_PARABOLIC:
+                return WAVEFORM_TRIANGLE_VARIABLE;
+            case WAVEFORM_HARMONIC:
+                return WAVEFORM_PARABOLIC;
+            case WAVEFORM_SILENT:
+                return WAVEFORM_HARMONIC;
+        }
+    }
+    return val;
+}
 FLASHMEM int getWaveformA(int value)
 {
   if (value >= 0 && value < 7)
@@ -1464,8 +1507,10 @@ void showSettingsPage()
 void checkSwitches()
 {
     sectionSwitch.update();
-    if (sectionSwitch.numClicks() == 1) {
-nextSection();
+    if (sectionSwitch.numClicks() == 2) {
+        prevSection();
+    } else if (sectionSwitch.numClicks() == 1) {
+        nextSection();
     }
 
 }
@@ -1701,7 +1746,43 @@ FLASHMEM void reinitialiseToPanel()
 //  }
   volumePrevious = RE_READ;
   patchName = INITPATCHNAME;
-  showPatchPage(F("Initial"), F("Panel Settings"));
+}
+
+void updateSection(byte encIndex, bool moveUp) {
+    switch(section) {
+
+        case Section::None:
+            return;
+        case Section::Osc1:
+            switch(encIndex) {
+                case 0:
+//                    midiCCOut(CCoscwaveformA, mux1Read);
+                    updateWaveformA(cycleWaveformA(moveUp));
+                    return;
+//                case 1:
+//                    midiCCOut(CCpitchA, mux1Read);
+//                    myControlChange(midiChannel, CCpitchA, mux1Read);
+//                    return;
+            }
+            break;
+        case Section::Osc2:
+            break;
+        case Section::Noise:
+            break;
+        case Section::LFO:
+            break;
+        case Section::FilterEnvelope:
+            break;
+        case Section::Filter:
+            break;
+        case Section::FilterLFO:
+            break;
+        case Section::Amp:
+            break;
+        case Section::FX:
+            break;
+    }
+    showPatchPage(F("ERROR"), String((int)section));
 }
 
 void checkEncoder()
@@ -1709,7 +1790,18 @@ void checkEncoder()
   // Encoder works with relative inc and dec values
   // Detent encoder goes up in 4 steps, hence +/-3
   long encRead = encoder.read();
-  if ((encCW && encRead > encPrevious + 3) || (!encCW && encRead < encPrevious - 3))
+  bool moveUp = (encCW && encRead > encPrevious + 3) || (!encCW && encRead < encPrevious - 3);
+  bool moveDown = (encCW && encRead < encPrevious - 3) || (!encCW && encRead > encPrevious + 3);
+
+  if(section != Section::None) {
+      if(moveUp || moveDown) {
+          updateSection(0, moveUp);
+          encPrevious = encRead;
+      }
+      return;
+  }
+
+  if (moveUp)
   {
     switch (state)
     {
@@ -1749,7 +1841,7 @@ void checkEncoder()
     }
     encPrevious = encRead;
   }
-  else if ((encCW && encRead < encPrevious - 3) || (!encCW && encRead > encPrevious + 3))
+  else if (moveDown)
   {
     switch (state)
     {
@@ -1824,7 +1916,7 @@ void loop()
   // MIDI 5 Pin DIN
   MIDI.read();
   // checkMux();
-  
+
     checkVolumePot(); // Check here
     if (!firstPatchLoaded)
     {

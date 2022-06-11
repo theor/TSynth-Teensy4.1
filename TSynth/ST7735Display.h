@@ -60,6 +60,41 @@ enum class Section {
 };
 Section section = Section::None;
 
+void prevSection() {
+    switch(section) {
+        case Section::Osc1:
+            section = Section::None;
+            break;
+        case Section::Osc2:
+            section = Section::Osc1;
+            break;
+        case Section::Noise:
+            section = Section::Osc2;
+            break;
+        case Section::LFO:
+            section = Section::Noise;
+            break;
+        case Section::FilterEnvelope:
+            section = Section::LFO;
+            break;
+        case Section::Filter:
+            section = Section::FilterEnvelope;
+            break;
+        case Section::FilterLFO:
+            section = Section::Filter;
+            break;
+        case Section::Amp:
+            section = Section::FilterLFO;
+            break;
+        case Section::FX:
+            section = Section::Amp;
+            break;
+        case Section::None:
+            section = Section::FX;
+            break;
+    }
+}
+
 void nextSection() {
     switch(section) {
         case Section::None:
