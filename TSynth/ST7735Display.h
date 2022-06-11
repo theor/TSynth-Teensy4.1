@@ -46,6 +46,89 @@ uint16_t prevLen = 0;
 
 uint32_t colourPriority[5] = {ST7735_BLACK, ST7735_BLUE, ST7735_YELLOW, ST77XX_ORANGE, ST77XX_DARKRED};
 
+enum class Section {
+    None,
+    Osc1,
+    Osc2,
+    Noise,
+    LFO,
+    FilterEnvelope,
+    Filter,
+    FilterLFO,
+    Amp,
+    FX
+};
+Section section = Section::None;
+
+void nextSection() {
+    switch(section) {
+        case Section::None:
+            section = Section::Osc1;
+            break;
+        case Section::Osc1:
+            section = Section::Osc2;
+            break;
+        case Section::Osc2:
+            section = Section::Noise;
+            break;
+        case Section::Noise:
+            section = Section::LFO;
+            break;
+        case Section::LFO:
+            section = Section::FilterEnvelope;
+            break;
+        case Section::FilterEnvelope:
+            section = Section::Filter;
+            break;
+        case Section::Filter:
+            section = Section::FilterLFO;
+            break;
+        case Section::FilterLFO:
+            section = Section::Amp;
+            break;
+        case Section::Amp:
+            section = Section::FX;
+            break;
+        case Section::FX:
+            section = Section::None;
+            break;
+    }
+}
+void printSection() {
+    switch(section){
+        case Section::None:
+            tft.println(F("None"));
+            break;
+        case Section::Osc1:
+            tft.println(F("Osc1"));
+            break;
+        case Section::Osc2:
+            tft.println(F("Osc2"));
+            break;
+        case Section::Noise:
+            tft.println(F("Noise"));
+            break;
+        case Section::LFO:
+            tft.println(F("LFO"));
+            break;
+        case Section::FilterEnvelope:
+            tft.println(F("FilterEnvelope"));
+            break;
+        case Section::Filter:
+            tft.println(F("Filter"));
+            break;
+        case Section::FilterLFO:
+            tft.println(F("FilterLFO"));
+            break;
+        case Section::Amp:
+            tft.println(F("Amp"));
+            break;
+        case Section::FX:
+            tft.println(F("FX"));
+            break;
+    }
+}
+
 unsigned long timer = 0;
 
 void startTimer() {
@@ -105,7 +188,7 @@ FLASHMEM void renderPeak() {
 
 FLASHMEM void renderCurrentPatchPage() {
   tft.fillScreen(ST7735_BLACK);
-  tft.setFont(&FreeSansBold18pt7b);
+  tft.setFont(&FreeSans12pt7b);
   tft.setCursor(5, 53);
   tft.setTextColor(ST7735_YELLOW);
   tft.setTextSize(1);
@@ -157,11 +240,17 @@ FLASHMEM void renderCurrentPatchPage() {
   }
 
   tft.drawFastHLine(10, 63, tft.width() - 20, ST7735_RED);
-  tft.setFont(&FreeSans12pt7b);
+  tft.setFont(&FreeSans9pt7b);
   tft.setTextColor(ST7735_YELLOW);
-  tft.setCursor(1, 90);
+  tft.setCursor(30, 45);
   tft.setTextColor(ST7735_WHITE);
-  tft.println(currentPatchName);
+  tft.println(currentPatchName.substring(0, min(currentPatchName.length(), 8u)));
+  if(currentPatchName.length() >= 8) {
+      tft.setCursor(30, 60);
+      tft.println(currentPatchName.substring(8)); }
+
+    tft.setCursor(1, 118);
+    printSection();
 }
 
 FLASHMEM void renderPulseWidth(float value) {
@@ -457,7 +546,7 @@ void setupDisplay() {
   tft.initR(INITR_BLACKTAB);
   tft.useFrameBuffer(true);
   tft.setRotation(3);
-  tft.invertDisplay(true);
+  tft.invertDisplay(false);
   renderBootUpPage();
   tft.updateScreen();
   threads.addThread(displayThread);
