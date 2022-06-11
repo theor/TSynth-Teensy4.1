@@ -1748,6 +1748,21 @@ FLASHMEM void reinitialiseToPanel()
   patchName = INITPATCHNAME;
 }
 
+template<typename T, size_t  N>
+size_t indexOf(const T(&array)[N] , T value, bool next) {
+    for (size_t i = 0; i < N; ++i) {
+        if(value == array[i]) {
+            if(next){
+                while(value == array[i] && i < N) i++;
+                return (i+1) % N;
+            }else {
+                return (i+N-1) % N;
+            }
+        }
+    }
+    return 0;
+}
+
 void updateSection(byte encIndex, bool moveUp) {
     switch(section) {
 
@@ -1759,10 +1774,11 @@ void updateSection(byte encIndex, bool moveUp) {
 //                    midiCCOut(CCoscwaveformA, mux1Read);
                     updateWaveformA(cycleWaveformA(moveUp));
                     return;
-//                case 1:
-//                    midiCCOut(CCpitchA, mux1Read);
-//                    myControlChange(midiChannel, CCpitchA, mux1Read);
-//                    return;
+                case 1:
+                    auto newVal = indexOf(PITCH, ( int8_t)groupvec[activeGroupIndex]->params().oscPitchA, moveUp);
+                    midiCCOut(CCpitchA, newVal);
+                    myControlChange(midiChannel, CCpitchA, newVal);
+                    return;
             }
             break;
         case Section::Osc2:
@@ -1795,7 +1811,7 @@ void checkEncoder()
 
   if(section != Section::None) {
       if(moveUp || moveDown) {
-          updateSection(0, moveUp);
+          updateSection(1, moveUp);
           encPrevious = encRead;
       }
       return;
