@@ -307,123 +307,6 @@ FLASHMEM String getWaveformStr(int value)
   }
 }
 
-FLASHMEM int cycleWaveformA(bool next) {
-    auto val = groupvec[activeGroupIndex]->getWaveformA();
-    if(next) {
-        switch(val) {
-            case WAVEFORM_SILENT:
-                return WAVEFORM_TRIANGLE;
-            case WAVEFORM_TRIANGLE:
-                return WAVEFORM_BANDLIMIT_SQUARE;
-            case WAVEFORM_BANDLIMIT_SQUARE:
-                return WAVEFORM_BANDLIMIT_SAWTOOTH;
-            case WAVEFORM_BANDLIMIT_SAWTOOTH:
-                return WAVEFORM_BANDLIMIT_PULSE;
-            case WAVEFORM_BANDLIMIT_PULSE:
-                return WAVEFORM_TRIANGLE_VARIABLE;
-            case WAVEFORM_TRIANGLE_VARIABLE:
-                return WAVEFORM_PARABOLIC;
-            case WAVEFORM_PARABOLIC:
-                return WAVEFORM_HARMONIC;
-            case WAVEFORM_HARMONIC:
-                return WAVEFORM_SILENT;
-        }
-    } else {
-        switch(val) {
-            case WAVEFORM_TRIANGLE:
-                return WAVEFORM_SILENT;
-            case WAVEFORM_BANDLIMIT_SQUARE:
-                return WAVEFORM_TRIANGLE;
-            case WAVEFORM_BANDLIMIT_SAWTOOTH:
-                return WAVEFORM_BANDLIMIT_SQUARE;
-            case WAVEFORM_BANDLIMIT_PULSE:
-                return WAVEFORM_BANDLIMIT_SAWTOOTH;
-            case WAVEFORM_TRIANGLE_VARIABLE:
-                return WAVEFORM_BANDLIMIT_PULSE;
-            case WAVEFORM_PARABOLIC:
-                return WAVEFORM_TRIANGLE_VARIABLE;
-            case WAVEFORM_HARMONIC:
-                return WAVEFORM_PARABOLIC;
-            case WAVEFORM_SILENT:
-                return WAVEFORM_HARMONIC;
-        }
-    }
-    return val;
-}
-FLASHMEM int getWaveformA(int value)
-{
-  if (value >= 0 && value < 7)
-  {
-    // This will turn the osc off
-    return WAVEFORM_SILENT;
-  }
-  else if (value >= 7 && value < 23)
-  {
-    return WAVEFORM_TRIANGLE;
-  }
-  else if (value >= 23 && value < 40)
-  {
-    return WAVEFORM_BANDLIMIT_SQUARE;
-  }
-  else if (value >= 40 && value < 60)
-  {
-    return WAVEFORM_BANDLIMIT_SAWTOOTH;
-  }
-  else if (value >= 60 && value < 80)
-  {
-    return WAVEFORM_BANDLIMIT_PULSE;
-  }
-  else if (value >= 80 && value < 100)
-  {
-    return WAVEFORM_TRIANGLE_VARIABLE;
-  }
-  else if (value >= 100 && value < 120)
-  {
-    return WAVEFORM_PARABOLIC;
-  }
-  else
-  {
-    return WAVEFORM_HARMONIC;
-  }
-}
-
-FLASHMEM int getWaveformB(int value)
-{
-  if (value >= 0 && value < 7)
-  {
-    // This will turn the osc off
-    return WAVEFORM_SILENT;
-  }
-  else if (value >= 7 && value < 23)
-  {
-    return WAVEFORM_SAMPLE_HOLD;
-  }
-  else if (value >= 23 && value < 40)
-  {
-    return WAVEFORM_BANDLIMIT_SQUARE;
-  }
-  else if (value >= 40 && value < 60)
-  {
-    return WAVEFORM_BANDLIMIT_SAWTOOTH;
-  }
-  else if (value >= 60 && value < 80)
-  {
-    return WAVEFORM_BANDLIMIT_PULSE;
-  }
-  else if (value >= 80 && value < 100)
-  {
-    return WAVEFORM_TRIANGLE_VARIABLE;
-  }
-  else if (value >= 100 && value < 120)
-  {
-    return WAVEFORM_PARABOLIC;
-  }
-  else
-  {
-    return WAVEFORM_HARMONIC;
-  }
-}
-
 FLASHMEM void updateUnison(uint8_t unison)
 {
   groupvec[activeGroupIndex]->setUnisonMode(unison);
@@ -929,11 +812,11 @@ void myControlChange(byte channel, byte control, byte value)
     break;
 
   case CCoscwaveformA:
-    updateWaveformA(getWaveformA(value));
+    updateWaveformA((uint32_t)clampInto(WAVEFORMS_A, value));
     break;
 
   case CCoscwaveformB:
-    updateWaveformB(getWaveformB(value));
+    updateWaveformB((uint32_t)clampInto(WAVEFORMS_B, value));
     break;
 
   case CCpitchA:
@@ -1748,55 +1631,163 @@ FLASHMEM void reinitialiseToPanel()
   patchName = INITPATCHNAME;
 }
 
-template<typename T, size_t  N>
-size_t indexOf(const T(&array)[N] , T value, bool next) {
-    for (size_t i = 0; i < N; ++i) {
-        if(value == array[i]) {
-            if(next){
-                while(value == array[i] && i < N) i++;
-                return (i+1) % N;
-            }else {
-                return (i+N-1) % N;
-            }
-        }
-    }
-    return 0;
-}
-
 void updateSection(byte encIndex, bool moveUp) {
     switch(section) {
         case Section::Osc1:
             switch(encIndex) {
-                case 0:
-                case 2: {
+                case 0:{
                     auto newVal = indexOf(PITCH, (int8_t) groupvec[activeGroupIndex]->params().oscPitchA, moveUp);
                     midiCCOut(CCpitchA, newVal);
                     myControlChange(midiChannel, CCpitchA, newVal);
                     return;
                 }
-                case 1:
-                case 3: {
-//                    midiCCOut(CCoscwaveformA, mux1Read);
-                    updateWaveformA(cycleWaveformA(moveUp));
+                case 1:{
+                    auto newVal = indexOf(WAVEFORMS_A, (uint8_t) groupvec[activeGroupIndex]->getWaveformA(), moveUp);
+                    midiCCOut(CCoscwaveformA, WAVEFORMS_A[newVal]);
+                    updateWaveformA(WAVEFORMS_A[newVal]);
                     return;
+                }
+                case 2: {
+//                    return;
+                }
+                case 3: {
+//                    return;
                 }
             }
             break;
         case Section::Osc2:
+            switch(encIndex) {
+                case 0:{
+                    auto newVal = indexOf(PITCH, (int8_t) groupvec[activeGroupIndex]->params().oscPitchB, moveUp);
+                    midiCCOut(CCpitchB, newVal);
+                    myControlChange(midiChannel, CCpitchB, newVal);
+                    return;
+                }
+                case 1:{
+                    auto newVal = indexOf(WAVEFORMS_B, (uint8_t) groupvec[activeGroupIndex]->getWaveformB(), moveUp);
+                    midiCCOut(CCoscwaveformB, WAVEFORMS_B[newVal]);
+                    updateWaveformB(WAVEFORMS_B[newVal]);
+                    return;
+                }
+                case 2: {
+//                    return;
+                }
+                case 3: {
+//                    return;
+                }
+            }
             break;
         case Section::Noise:
+            switch(encIndex) {
+                case 0:{
+                    // return;
+                }
+                case 1:{
+                    // return;
+                }
+                case 2: {
+//                    return;
+                }
+                case 3: {
+//                    return;
+                }
+            }
             break;
         case Section::LFO:
+            switch(encIndex) {
+                case 0:{
+                    // return;
+                }
+                case 1:{
+                    // return;
+                }
+                case 2: {
+//                    return;
+                }
+                case 3: {
+//                    return;
+                }
+            }
             break;
         case Section::FilterEnvelope:
+            switch(encIndex) {
+                case 0:{
+                    // return;
+                }
+                case 1:{
+                    // return;
+                }
+                case 2: {
+//                    return;
+                }
+                case 3: {
+//                    return;
+                }
+            }
             break;
         case Section::Filter:
+            switch(encIndex) {
+                case 0:{
+                    // return;
+                }
+                case 1:{
+                    // return;
+                }
+                case 2: {
+//                    return;
+                }
+                case 3: {
+//                    return;
+                }
+            }
             break;
         case Section::FilterLFO:
+            switch(encIndex) {
+                case 0:{
+                    // return;
+                }
+                case 1:{
+                    // return;
+                }
+                case 2: {
+//                    return;
+                }
+                case 3: {
+//                    return;
+                }
+            }
             break;
         case Section::Amp:
+            switch(encIndex) {
+                case 0:{
+                    // return;
+                }
+                case 1:{
+                    // return;
+                }
+                case 2: {
+//                    return;
+                }
+                case 3: {
+//                    return;
+                }
+            }
             break;
         case Section::FX:
+            switch(encIndex) {
+                case 0:{
+                    // return;
+                }
+                case 1:{
+                    // return;
+                }
+                case 2: {
+//                    return;
+                }
+                case 3: {
+//                    return;
+                }
+            }
             break;
     }
     showPatchPage(String(F("ERROR")) + String(encIndex), String((int)section));
@@ -1810,9 +1801,9 @@ void checkEncoder()
 
 //    if(section != Section::None) {
         byte encIndex = 0;
-        for (auto &encoder: sectionEncoders) {
-            encoder.update();
-            auto sectionDelta = encoder.getDelta();
+        for (auto &sectionEncoder: sectionEncoders) {
+            sectionEncoder.update();
+            int8_t sectionDelta = sectionEncoder.getDelta();
             if (sectionDelta != 0)
                 updateSection(encIndex, sectionDelta > 0);
             encIndex++;

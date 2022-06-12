@@ -21,6 +21,7 @@
 #include "Fonts/FreeSans9pt7b.h"
 #include "Fonts/FreeSansOblique24pt7b.h"
 #include "Fonts/FreeSansBoldOblique24pt7b.h"
+#include "OpenSansRegular7.h"
 
 #define PULSE 1
 #define VAR_TRI 2
@@ -164,14 +165,67 @@ void printSection() {
     }
 }
 
+void alignRight(const String& str, int16_t x, int16_t y) {
+    int16_t bx =0, by = 0;
+    uint16_t bw=0, bh=0;
+    tft.getTextBounds(str, 1, y, &bx, &by, &bw, &bh);
+//    tft.drawRect(bx,by,bw,bh, ST7735_BLUE);
+    tft.setCursor(x - bw, y);
+    tft.print(str);
 
+}
 
 void printSectionControls() {
-    tft.setFont(&Org_01);
-    for (int i = 0; i < 4; ++i) {
-        tft.print(SectionControls[(int)section][i]);
-        tft.print(' ');
+    uint8_t ys[4] = {108, 124, 124, 108};
+    const uint8_t squareY = 85;
+//    for (int i = 0; i < 2; ++i) {
+//        uint8_t x1 = 6 + i * 80;
+//        uint8_t x2 = -6 + (i+1) * 80;
+//        tft.drawRect(x1 - 3, squareY-3, 7, 7, ST7735_RED);
+//        tft.drawFastVLine(x1, squareY, ys[0] - 12 - squareY, ST7735_RED);
+//        tft.drawRect(x2 - 3, squareY-3, 7, 7, ST7735_RED);
+//        tft.drawFastVLine(x2, squareY, ys[1] - 2 - squareY, ST7735_RED);
+//        tft.drawFastHLine(x2-4, ys[1] - 2, 4, ST7735_RED);
+//    }
+
+        for (int i = 0; i < 4; ++i) {
+            uint8_t x = 80 + (i*2-3)*5;
+        tft.drawRect(x - 3, squareY-3, 7, 7, ST7735_RED);
+        bool isTopLine = i == 0 || i == 3;
+        uint8_t y = isTopLine ? ys[0] : ys[1];
+        tft.drawFastVLine(x, squareY + 3, y - (isTopLine ? 12 : 4) - squareY - 3, ST7735_RED);
+        if(isTopLine) {
+            tft.drawFastHLine(x - 3, y - 12, 7, ST7735_RED);
+        } else {
+            tft.drawFastHLine(i == 1 ? (x-4) : x, y - 4, 4, ST7735_RED);
+        }
+
+//        tft.drawFastVLine(i*40, 90, 125, ST7735_MAGENTA);
     }
+    tft.setTextSize(1);
+    tft.setCursor(1, 100);
+    tft.setFont(&Open_Sans_Regular_11);
+    tft.setTextWrap(false);
+    for (int i = 0; i < 4; ++i) {
+        if(i < 2)
+            alignRight(SectionControls[(int)section][i], 80-10, ys[i]);
+        else
+        {
+            tft.setCursor(80+8, ys[i]);
+            tft.println(SectionControls[(int)section][i]);
+        }
+//        if(i >= 2)
+//            alignRight(SectionControls[(int)section][i], 146, ys[i]);
+//        else
+//        {
+//            tft.setCursor(1, ys[i]);
+//            tft.println(SectionControls[(int)section][i]);
+//        }
+    }
+//    int16_t x =0, y = 0;
+//    uint16_t w=0, h=0;
+//    tft.getTextBounds(SectionControls[(int)section][0], 1, 100, &x, &y, &w, &h);
+//    tft.drawRect(x,y,w,h, ST7735_BLUE);
 }
 
 unsigned long timer = 0;
@@ -297,7 +351,6 @@ FLASHMEM void renderCurrentPatchPage() {
     tft.setCursor(1, 80);
     printSection();
 
-    tft.setCursor(1, 100);
     printSectionControls();
 }
 

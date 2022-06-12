@@ -57,4 +57,10 @@ extern const uint16_t PROGMEM CLICK_DURATION;
 extern const float PROGMEM ENSEMBLE_LFO[128];
 extern const char* INITPATCH;
 
+
+const static uint32_t WAVEFORM_PARABOLIC = 103;
+const static uint32_t WAVEFORM_HARMONIC = 104;
+
 extern const String SectionControls[9][4];
+extern const uint8_t PROGMEM WAVEFORMS_A[8];
+extern const uint8_t PROGMEM WAVEFORMS_B[8];

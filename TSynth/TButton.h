@@ -57,7 +57,7 @@ public:
         if(delta != 0)
             lastValue = newValue;
     }
-    byte getDelta() { return delta; };
+    int8_t getDelta() { return delta; };
 private:
     Encoder encoder;
     long lastValue;

@@ -25,9 +25,6 @@
 // Legato isn't supported, the envelope state from the previous note needs to transfer to the new note
 #define MONOPHONIC_LEGATO 5
 
-const static uint32_t WAVEFORM_PARABOLIC = 103;
-const static uint32_t WAVEFORM_HARMONIC = 104;
-
 class VoiceGroup
 {
 private:
