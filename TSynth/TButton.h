@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <Bounce.h>
+#include <Encoder.h>
 
 /**
  * Wrap a pin to help detect different types of button activation.
@@ -42,6 +43,26 @@ class TButton
     inline int numClicksPending(){ return _clicks; };
     bool pressed(){ return _currentState == _pressedState; };
     bool held(){ return buttonHeld; };
+};
+
+class TEncoder
+{
+public:
+    TEncoder(uint8_t pin1, uint8_t pin2, bool encCW = false) : encoder(pin1, pin2), lastValue(0), encCW(encCW), delta(0) {}
+    void update() {
+        long newValue = encoder.read();
+        bool moveUp = (encCW && newValue > lastValue + 3) || (!encCW && newValue < lastValue - 3);
+        bool moveDown = (encCW && newValue < lastValue - 3) || (!encCW && newValue > lastValue + 3);
+        this->delta = moveUp ? 1 : (moveDown ? -1 : 0);
+        if(delta != 0)
+            lastValue = newValue;
+    }
+    byte getDelta() { return delta; };
+private:
+    Encoder encoder;
+    long lastValue;
+    bool encCW;
+    int8_t delta;
 };
 
 #endif

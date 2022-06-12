@@ -56,3 +56,5 @@ extern const uint16_t PROGMEM HOLD_DURATION;
 extern const uint16_t PROGMEM CLICK_DURATION;
 extern const float PROGMEM ENSEMBLE_LFO[128];
 extern const char* INITPATCH;
+
+extern const String SectionControls[9][4];

@@ -80,7 +80,7 @@ ADC *adc = new ADC();
 #define ENCODER_PINB 5
 #define ENCODER1_PINA 17
 #define ENCODER1_PINB 16
-#define ENCODER2_PINA 29
+#define ENCODER2_PINA 25
 #define ENCODER2_PINB 28
 #define ENCODER3_PINA 29
 #define ENCODER3_PINB 30
@@ -100,7 +100,8 @@ ADC *adc = new ADC();
 #define BACKLIGHT 6
 
 #define MUXCHANNELS 16
-#define QUANTISE_FACTOR 255// Sets a tolerance of noise on the ADC. 15 is 4 bits
+#define QUANTISE_FACTOR 15// Sets a tolerance of noise on the ADC. 15 is 4 bits
+#define QUANTISE_FACTOR_VOL 511// Sets a tolerance of noise on the ADC. 15 is 4 bits
 
 #define DEBOUNCE 30
 
@@ -112,7 +113,6 @@ ADC *adc = new ADC();
 //static uint16_t mux2Read = 0;
 static int volumeRead = 0;
 static int volumePrevious = 0;
-static long encPrevious = 0;
 
 #define SECTION_SW 37
 TButton sectionSwitch{SECTION_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
@@ -127,15 +127,17 @@ TButton sectionSwitch{SECTION_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
 //TButton saveButton{SAVE_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
 //TButton settingsButton{SETTINGS_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
 //TButton backButton{BACK_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
-Encoder encoder(ENCODER_PINB, ENCODER_PINA);//This often needs the pins swapping depending on the encoder
-Encoder encoder1(ENCODER1_PINB, ENCODER1_PINA);//This often needs the pins swapping depending on the encoder
-Encoder encoder2(ENCODER2_PINB, ENCODER2_PINA);//This often needs the pins swapping depending on the encoder
-Encoder encoder3(ENCODER3_PINB, ENCODER3_PINA);//This often needs the pins swapping depending on the encoder
-Encoder encoder4(ENCODER4_PINB, ENCODER4_PINA);//This often needs the pins swapping depending on the encoder
+TEncoder encoder(ENCODER_PINB, ENCODER_PINA);//This often needs the pins swapping depending on the encoder
+TEncoder sectionEncoders[4] = {
+        TEncoder(ENCODER1_PINB, ENCODER1_PINA),
+        TEncoder(ENCODER2_PINB, ENCODER2_PINA),
+        TEncoder(ENCODER3_PINB, ENCODER3_PINA),
+        TEncoder(ENCODER4_PINB, ENCODER4_PINA),
+};
 
 FLASHMEM void setupHardware() {
   //Volume Pot is on ADC0
-  adc->adc0->setAveraging(32); // set number of averages 0, 4, 8, 16 or 32.
+  adc->adc0->setAveraging(16); // set number of averages 0, 4, 8, 16 or 32.
   adc->adc0->setResolution(12); // set bits of resolution  8, 10, 12 or 16 bits.
   adc->adc0->setConversionSpeed(ADC_CONVERSION_SPEED::VERY_LOW_SPEED); // change the conversion speed
   adc->adc0->setSamplingSpeed(ADC_SAMPLING_SPEED::MED_SPEED); // change the sampling speed

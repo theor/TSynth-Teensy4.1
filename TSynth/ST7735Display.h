@@ -47,7 +47,7 @@ uint16_t prevLen = 0;
 uint32_t colourPriority[5] = {ST7735_BLACK, ST7735_BLUE, ST7735_YELLOW, ST77XX_ORANGE, ST77XX_DARKRED};
 
 enum class Section {
-    None,
+//    None,
     Osc1,
     Osc2,
     Noise,
@@ -58,12 +58,12 @@ enum class Section {
     Amp,
     FX
 };
-Section section = Section::None;
+Section section = Section::Osc1;
 
 void prevSection() {
     switch(section) {
         case Section::Osc1:
-            section = Section::None;
+            section = Section::FX;
             break;
         case Section::Osc2:
             section = Section::Osc1;
@@ -89,17 +89,17 @@ void prevSection() {
         case Section::FX:
             section = Section::Amp;
             break;
-        case Section::None:
-            section = Section::FX;
-            break;
+//        case Section::None:
+//            section = Section::FX;
+//            break;
     }
 }
 
 void nextSection() {
     switch(section) {
-        case Section::None:
-            section = Section::Osc1;
-            break;
+//        case Section::None:
+//            section = Section::Osc1;
+//            break;
         case Section::Osc1:
             section = Section::Osc2;
             break;
@@ -125,15 +125,15 @@ void nextSection() {
             section = Section::FX;
             break;
         case Section::FX:
-            section = Section::None;
+            section = Section::Osc1;
             break;
     }
 }
 void printSection() {
     switch(section){
-        case Section::None:
-            tft.println(F("None"));
-            break;
+//        case Section::None:
+//            tft.println(F("None"));
+//            break;
         case Section::Osc1:
             tft.println(F("Osc1"));
             break;
@@ -161,6 +161,16 @@ void printSection() {
         case Section::FX:
             tft.println(F("FX"));
             break;
+    }
+}
+
+
+
+void printSectionControls() {
+    tft.setFont(&Org_01);
+    for (int i = 0; i < 4; ++i) {
+        tft.print(SectionControls[(int)section][i]);
+        tft.print(' ');
     }
 }
 
@@ -284,8 +294,11 @@ FLASHMEM void renderCurrentPatchPage() {
       tft.setCursor(30, 60);
       tft.println(currentPatchName.substring(8)); }
 
-    tft.setCursor(1, 118);
+    tft.setCursor(1, 80);
     printSection();
+
+    tft.setCursor(1, 100);
+    printSectionControls();
 }
 
 FLASHMEM void renderPulseWidth(float value) {

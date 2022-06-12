@@ -1491,7 +1491,7 @@ FLASHMEM String getCurrentPatchData()
 void checkVolumePot()
 {
   volumeRead = adc->adc0->analogRead(VOLUME_POT);
-  if (volumeRead > (volumePrevious + QUANTISE_FACTOR) || volumeRead < (volumePrevious - QUANTISE_FACTOR))
+  if (volumeRead > (volumePrevious + QUANTISE_FACTOR_VOL) || volumeRead < (volumePrevious - QUANTISE_FACTOR_VOL))
   {
     volumePrevious = volumeRead;
     volumeRead = (volumeRead >> 5); // Change range to 0-127
@@ -1765,20 +1765,21 @@ size_t indexOf(const T(&array)[N] , T value, bool next) {
 
 void updateSection(byte encIndex, bool moveUp) {
     switch(section) {
-
-        case Section::None:
-            return;
         case Section::Osc1:
             switch(encIndex) {
                 case 0:
-//                    midiCCOut(CCoscwaveformA, mux1Read);
-                    updateWaveformA(cycleWaveformA(moveUp));
-                    return;
-                case 1:
-                    auto newVal = indexOf(PITCH, ( int8_t)groupvec[activeGroupIndex]->params().oscPitchA, moveUp);
+                case 2: {
+                    auto newVal = indexOf(PITCH, (int8_t) groupvec[activeGroupIndex]->params().oscPitchA, moveUp);
                     midiCCOut(CCpitchA, newVal);
                     myControlChange(midiChannel, CCpitchA, newVal);
                     return;
+                }
+                case 1:
+                case 3: {
+//                    midiCCOut(CCoscwaveformA, mux1Read);
+                    updateWaveformA(cycleWaveformA(moveUp));
+                    return;
+                }
             }
             break;
         case Section::Osc2:
@@ -1798,26 +1799,27 @@ void updateSection(byte encIndex, bool moveUp) {
         case Section::FX:
             break;
     }
-    showPatchPage(F("ERROR"), String((int)section));
+    showPatchPage(String(F("ERROR")) + String(encIndex), String((int)section));
 }
 
 void checkEncoder()
 {
   // Encoder works with relative inc and dec values
   // Detent encoder goes up in 4 steps, hence +/-3
-  long encRead = encoder.read();
-  bool moveUp = (encCW && encRead > encPrevious + 3) || (!encCW && encRead < encPrevious - 3);
-  bool moveDown = (encCW && encRead < encPrevious - 3) || (!encCW && encRead > encPrevious + 3);
+  encoder.update();
 
-  if(section != Section::None) {
-      if(moveUp || moveDown) {
-          updateSection(1, moveUp);
-          encPrevious = encRead;
-      }
-      return;
-  }
-
-  if (moveUp)
+//    if(section != Section::None) {
+        byte encIndex = 0;
+        for (auto &encoder: sectionEncoders) {
+            encoder.update();
+            auto sectionDelta = encoder.getDelta();
+            if (sectionDelta != 0)
+                updateSection(encIndex, sectionDelta > 0);
+            encIndex++;
+        }
+//    }
+  int8_t delta = encoder.getDelta();
+  if (delta > 0)
   {
     switch (state)
     {
@@ -1855,9 +1857,8 @@ void checkEncoder()
       showSettingsPage();
       break;
     }
-    encPrevious = encRead;
   }
-  else if (moveDown)
+  else if (delta < 0)
   {
     switch (state)
     {
@@ -1895,7 +1896,6 @@ void checkEncoder()
       showSettingsPage();
       break;
     }
-    encPrevious = encRead;
   }
 }
 
