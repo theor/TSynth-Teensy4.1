@@ -56,6 +56,7 @@
 #define AudioNoInterrupts() (NVIC_DISABLE_IRQ(IRQ_SOFTWARE))
 #define AudioInterrupts()   (NVIC_ENABLE_IRQ(IRQ_SOFTWARE))
 
+#include "core_pins.h"
 #include "control_sgtl5000.h"
 #include "effect_ensemble.h"
 #include "effect_envelope.h"//Local version

@@ -149,6 +149,7 @@ FLASHMEM void settingsVelocitySens(int index, const char * value) {
   }
 }
 
+FLASHMEM void updateKeyTracking(float value);
 FLASHMEM void settingsKeyTracking(int index, const char * value) {
   if (strcmp(value, "None") == 0) updateKeyTracking(0);
   if (strcmp(value, "Half") == 0) updateKeyTracking(0.5);

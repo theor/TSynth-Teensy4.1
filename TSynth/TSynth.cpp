@@ -76,6 +76,10 @@
 #define SETTINGS 8      // Settings page
 #define SETTINGSVALUE 9 // Settings page
 
+#ifdef __CLION_IDE_
+#define FLASHMEM
+#endif
+
 uint32_t state = PARAMETER;
 
 // Initialize the audio configuration.
@@ -112,125 +116,6 @@ uint8_t count = 0;           // For MIDI Clk Sync
 uint16_t patchNo = 1;         // Current patch no
 long earliestTime = millis(); // For voice allocation - initialise to now
 
-FLASHMEM void setup()
-{
-  // Initialize the voice groups.
-  uint8_t total = 0;
-  while (total < global.maxVoices())
-  {
-    VoiceGroup *currentGroup = new VoiceGroup{global.SharedAudio[groupvec.size()]};
-
-    for (uint8_t i = 0; total < global.maxVoices() && i < global.maxVoicesPerGroup(); i++)
-    {
-      Voice *v = new Voice(global.Oscillators[i], i);
-      currentGroup->add(v);
-      total++;
-    }
-
-    groupvec.push_back(currentGroup);
-  }
-
-  setupDisplay();
-  setUpSettings();
-  setupHardware();
-
-  AudioMemory(60);
-  global.sgtl5000_1.enable();
-  global.sgtl5000_1.volume(0.5 * SGTL_MAXVOLUME);
-  global.sgtl5000_1.dacVolumeRamp();
-  global.sgtl5000_1.muteHeadphone();
-  global.sgtl5000_1.muteLineout();
-  global.sgtl5000_1.audioPostProcessorEnable();
-  global.sgtl5000_1.enhanceBass(0.85, 0.87, 0, 4); // Normal level, bass level, HPF bypass (1 - on), bass cutoff freq
-  global.sgtl5000_1.enhanceBassDisable();          // Turned on from EEPROM
-
-  cardStatus = SD.begin(BUILTIN_SDCARD);
-  if (cardStatus)
-  {
-    Serial.println(F("SD card is connected"));
-    // Get patch numbers and names from SD card
-    loadPatches();
-    if (patches.size() == 0)
-    {
-      // save an initialised patch to SD card
-      savePatch("1", INITPATCH);
-      loadPatches();
-    }
-  }
-  else
-  {
-    Serial.println(F("SD card is not connected or unusable"));
-    reinitialiseToPanel();
-    showPatchPage(F("No SD"), F("conn'd / usable"));
-  }
-
-  // Read MIDI Channel from EEPROM
-  midiChannel = getMIDIChannel();
-  Serial.println(F("MIDI In Ch:") + String(midiChannel) + F(" (0 is Omni On)"));
-
-  // USB HOST MIDI Class Compliant
-  delay(200); // Wait to turn on USB Host
-  myusb.begin();
-  midi1.setHandleControlChange(myControlChange);
-  midi1.setHandleNoteOff(myNoteOff);
-  midi1.setHandleNoteOn(myNoteOn);
-  midi1.setHandlePitchChange(myPitchBend);
-  midi1.setHandleProgramChange(myProgramChange);
-  midi1.setHandleClock(myMIDIClock);
-  midi1.setHandleStart(myMIDIClockStart);
-  midi1.setHandleStop(myMIDIClockStop);
-  Serial.println(F("USB HOST MIDI Class Compliant Listening"));
-
-  // USB Client MIDI
-  usbMIDI.setHandleControlChange(myControlChange);
-  usbMIDI.setHandleNoteOff(myNoteOff);
-  usbMIDI.setHandleNoteOn(myNoteOn);
-  usbMIDI.setHandlePitchChange(myPitchBend);
-  usbMIDI.setHandleProgramChange(myProgramChange);
-  usbMIDI.setHandleClock(myMIDIClock);
-  usbMIDI.setHandleStart(myMIDIClockStart);
-  usbMIDI.setHandleStop(myMIDIClockStop);
-  Serial.println(F("USB Client MIDI Listening"));
-
-  // MIDI 5 Pin DIN
-  MIDI.begin();
-  MIDI.setHandleNoteOn(myNoteOn);
-  MIDI.setHandleNoteOff(myNoteOff);
-  MIDI.setHandlePitchBend(myPitchBend);
-  MIDI.setHandleControlChange(myControlChange);
-  MIDI.setHandleProgramChange(myProgramChange);
-  MIDI.setHandleClock(myMIDIClock);
-  MIDI.setHandleStart(myMIDIClockStart);
-  MIDI.setHandleStop(myMIDIClockStop);
-  Serial.println(F("MIDI In DIN Listening"));
-
-  volumePrevious = RE_READ; // Force volume control to be read and set to current
-
-  // Read Pitch Bend Range from EEPROM
-  pitchBendRange = getPitchBendRange();
-  // Read Mod Wheel Depth from EEPROM
-  modWheelDepth = getModWheelDepth();
-  // Read MIDI Out Channel from EEPROM
-  midiOutCh = getMIDIOutCh();
-  // Read MIDI Thru mode from EEPROM
-  MIDIThru = getMidiThru();
-  changeMIDIThruMode();
-  // Read Encoder Direction from EEPROM
-  encCW = getEncoderDir();
-  // Read Pick-up enable from EEPROM - experimental feature
-  pickUp = getPickupEnable();
-  // Read bass enhance enable from EEPROM
-  if (getBassEnhanceEnable())
-    global.sgtl5000_1.enhanceBassEnable();
-  // Read oscilloscope enable from EEPROM
-  enableScope(getScopeEnable());
-  // Read VU enable from EEPROM
-  vuMeter = getVUEnable();
-  // Read Filter and Amp Envelope shapes
-  reloadFiltEnv();
-  reloadAmpEnv();
-  reloadGlideShape();
-}
 
 void myNoteOn(byte channel, byte note, byte velocity)
 {
@@ -244,6 +129,17 @@ void myNoteOn(byte channel, byte note, byte velocity)
 void myNoteOff(byte channel, byte note, byte velocity)
 {
   groupvec[activeGroupIndex]->noteOff(note);
+}
+
+void midiCCOut(byte cc, byte value)
+{
+    if (midiOutCh > 0)
+    {
+        usbMIDI.sendControlChange(cc, value, midiOutCh);
+        midi1.sendControlChange(cc, value, midiOutCh);
+        if (MIDIThru == midi::Thru::Off)
+            MIDI.sendControlChange(cc, value, midiOutCh); // MIDI DIN is set to Out
+    }
 }
 
 int getLFOWaveform(int value)
@@ -1056,16 +952,6 @@ void myControlChange(byte channel, byte control, byte value)
   }
 }
 
-FLASHMEM void myProgramChange(byte channel, byte program)
-{
-  state = PATCH;
-  patchNo = program + 1;
-  recallPatch(patchNo);
-  Serial.print(F("MIDI Pgm Change:"));
-  Serial.println(patchNo);
-  state = PARAMETER;
-}
-
 FLASHMEM void myMIDIClockStart()
 {
   setMIDIClkSignal(true);
@@ -1102,98 +988,6 @@ FLASHMEM void myMIDIClock()
   count++;
 }
 
-FLASHMEM void recallPatch(int patchNo)
-{
-  groupvec[activeGroupIndex]->allNotesOff();
-  groupvec[activeGroupIndex]->closeEnvelopes();
-  File patchFile = SD.open(String(patchNo).c_str());
-  if (!patchFile)
-  {
-    Serial.println(F("File not found"));
-  }
-  else
-  {
-    String data[NO_OF_PARAMS]; // Array of data read in
-    recallPatchData(patchFile, data);
-    setCurrentPatchData(data);
-    patchFile.close();
-  }
-}
-
-FLASHMEM void setCurrentPatchData(String data[])
-{
-  updatePatch(data[0], patchNo);
-  updateOscLevelA(data[1].toFloat());
-  updateOscLevelB(data[2].toFloat());
-  updateNoiseLevel(data[3].toFloat());
-  updateUnison(data[4].toInt());
-  updateOscFX(data[5].toInt());
-  updateDetune(data[6].toFloat(), data[48].toInt());
-  // Why is this MIDI Clock stuff part of the patch??
-  lfoSyncFreq = data[7].toInt();
-  midiClkTimeInterval = data[8].toInt();
-  lfoTempoValue = data[9].toFloat();
-  updateKeyTracking(data[10].toFloat());
-  updateGlide(data[11].toFloat());
-  updatePitchA(data[12].toFloat());
-  updatePitchB(data[13].toFloat());
-  updateWaveformA(data[14].toInt());
-  updateWaveformB(data[15].toInt());
-  updatePWMSource(data[16].toInt());
-  updatePWA(data[20].toFloat(), data[17].toFloat());
-  updatePWB(data[21].toFloat(), data[18].toFloat());
-  updatePWMRate(data[19].toFloat());
-  updateFilterRes(data[22].toFloat());
-  resonancePrevValue = data[22].toFloat(); // Pick-up
-  updateFilterFreq(data[23].toFloat());
-  filterfreqPrevValue = data[23].toInt(); // Pick-up
-  updateFilterMixer(data[24].toFloat());
-  filterMixPrevValue = data[24].toFloat(); // Pick-up
-  updateFilterEnv(data[25].toFloat());
-  updatePitchLFOAmt(data[26].toFloat());
-  oscLfoAmtPrevValue = data[26].toFloat(); // PICK-UP
-  updatePitchLFORate(data[27].toFloat());
-  oscLfoRatePrevValue = data[27].toFloat(); // PICK-UP
-  updatePitchLFOWaveform(data[28].toInt());
-  updatePitchLFORetrig(data[29].toInt() > 0);
-  updatePitchLFOMidiClkSync(data[30].toInt() > 0); // MIDI CC Only
-  updateFilterLfoRate(data[31].toFloat(), "");
-  filterLfoRatePrevValue = data[31].toFloat(); // PICK-UP
-  updateFilterLFORetrig(data[32].toInt() > 0);
-  updateFilterLFOMidiClkSync(data[33].toInt() > 0);
-  updateFilterLfoAmt(data[34].toFloat());
-  filterLfoAmtPrevValue = data[34].toFloat(); // PICK-UP
-  updateFilterLFOWaveform(data[35].toFloat());
-  updateFilterAttack(data[36].toFloat());
-  updateFilterDecay(data[37].toFloat());
-  updateFilterSustain(data[38].toFloat());
-  updateFilterRelease(data[39].toFloat());
-  updateAttack(data[40].toFloat());
-  updateDecay(data[41].toFloat());
-  updateSustain(data[42].toFloat());
-  updateRelease(data[43].toFloat());
-  updateEffectAmt(data[44].toFloat());
-  fxAmtPrevValue = data[44].toFloat(); // PICK-UP
-  updateEffectMix(data[45].toFloat());
-  fxMixPrevValue = data[45].toFloat(); // PICK-UP
-  updatePitchEnv(data[46].toFloat());
-  velocitySens = data[47].toFloat();
-  groupvec[activeGroupIndex]->setMonophonic(data[49].toInt());
-  //  SPARE1 = data[50].toFloat();
-  //  SPARE2 = data[51].toFloat();
-
-  Serial.print(F("Set Patch: "));
-  Serial.println(data[0]);
-}
-
-FLASHMEM String getCurrentPatchData()
-{
-  auto p = groupvec[activeGroupIndex]->params();
-  return patchName + F(",") + String(groupvec[activeGroupIndex]->getOscLevelA()) + F(",") + String(groupvec[activeGroupIndex]->getOscLevelB()) + F(",") + String(groupvec[activeGroupIndex]->getPinkNoiseLevel() - groupvec[activeGroupIndex]->getWhiteNoiseLevel()) + F(",") + String(p.unisonMode) + F(",") + String(groupvec[activeGroupIndex]->getOscFX()) + F(",") + String(p.detune, 5) + F(",") + String(lfoSyncFreq) + F(",") + String(midiClkTimeInterval) + F(",") + String(lfoTempoValue) + F(",") + String(groupvec[activeGroupIndex]->getKeytrackingAmount()) + F(",") + String(p.glideSpeed, 5) + F(",") + String(p.oscPitchA) + F(",") + String(p.oscPitchB) + F(",") + String(groupvec[activeGroupIndex]->getWaveformA()) + F(",") + String(groupvec[activeGroupIndex]->getWaveformB()) + F(",") +
-         String(groupvec[activeGroupIndex]->getPwmSource()) + F(",") + String(groupvec[activeGroupIndex]->getPwmAmtA()) + F(",") + String(groupvec[activeGroupIndex]->getPwmAmtB()) + F(",") + String(groupvec[activeGroupIndex]->getPwmRate()) + F(",") + String(groupvec[activeGroupIndex]->getPwA()) + F(",") + String(groupvec[activeGroupIndex]->getPwB()) + F(",") + String(groupvec[activeGroupIndex]->getResonance()) + F(",") + String(groupvec[activeGroupIndex]->getCutoff()) + F(",") + String(groupvec[activeGroupIndex]->getFilterMixer()) + F(",") + String(groupvec[activeGroupIndex]->getFilterEnvelope()) + F(",") + String(groupvec[activeGroupIndex]->getPitchLfoAmount(), 5) + F(",") + String(groupvec[activeGroupIndex]->getPitchLfoRate(), 5) + F(",") + String(groupvec[activeGroupIndex]->getPitchLfoWaveform()) + F(",") + String(int(groupvec[activeGroupIndex]->getPitchLfoRetrig())) + F(",") + String(int(groupvec[activeGroupIndex]->getPitchLfoMidiClockSync())) + F(",") + String(groupvec[activeGroupIndex]->getFilterLfoRate(), 5) + F(",") +
-         groupvec[activeGroupIndex]->getFilterLfoRetrig() + F(",") + groupvec[activeGroupIndex]->getFilterLfoMidiClockSync() + F(",") + groupvec[activeGroupIndex]->getFilterLfoAmt() + F(",") + groupvec[activeGroupIndex]->getFilterLfoWaveform() + F(",") + groupvec[activeGroupIndex]->getFilterAttack() + F(",") + groupvec[activeGroupIndex]->getFilterDecay() + F(",") + groupvec[activeGroupIndex]->getFilterSustain() + F(",") + groupvec[activeGroupIndex]->getFilterRelease() + F(",") + groupvec[activeGroupIndex]->getAmpAttack() + F(",") + groupvec[activeGroupIndex]->getAmpDecay() + F(",") + groupvec[activeGroupIndex]->getAmpSustain() + F(",") + groupvec[activeGroupIndex]->getAmpRelease() + F(",") +
-         String(groupvec[activeGroupIndex]->getEffectAmount()) + F(",") + String(groupvec[activeGroupIndex]->getEffectMix()) + F(",") + String(groupvec[activeGroupIndex]->getPitchEnvelope()) + F(",") + String(velocitySens) + F(",") + String(p.chordDetune) + F(",") + String(groupvec[activeGroupIndex]->getMonophonicMode()) + F(",") + String(0.0f) + F(",") + String(0.0f);
-}
 
 //void checkMux()
 //{
@@ -1631,6 +1425,83 @@ FLASHMEM void reinitialiseToPanel()
   patchName = INITPATCHNAME;
 }
 
+
+
+FLASHMEM void setCurrentPatchData(String data[])
+{
+    updatePatch(data[0], patchNo);
+    updateOscLevelA(data[1].toFloat());
+    updateOscLevelB(data[2].toFloat());
+    updateNoiseLevel(data[3].toFloat());
+    updateUnison(data[4].toInt());
+    updateOscFX(data[5].toInt());
+    updateDetune(data[6].toFloat(), data[48].toInt());
+    // Why is this MIDI Clock stuff part of the patch??
+    lfoSyncFreq = data[7].toInt();
+    midiClkTimeInterval = data[8].toInt();
+    lfoTempoValue = data[9].toFloat();
+    updateKeyTracking(data[10].toFloat());
+    updateGlide(data[11].toFloat());
+    updatePitchA(data[12].toFloat());
+    updatePitchB(data[13].toFloat());
+    updateWaveformA(data[14].toInt());
+    updateWaveformB(data[15].toInt());
+    updatePWMSource(data[16].toInt());
+    updatePWA(data[20].toFloat(), data[17].toFloat());
+    updatePWB(data[21].toFloat(), data[18].toFloat());
+    updatePWMRate(data[19].toFloat());
+    updateFilterRes(data[22].toFloat());
+    resonancePrevValue = data[22].toFloat(); // Pick-up
+    updateFilterFreq(data[23].toFloat());
+    filterfreqPrevValue = data[23].toInt(); // Pick-up
+    updateFilterMixer(data[24].toFloat());
+    filterMixPrevValue = data[24].toFloat(); // Pick-up
+    updateFilterEnv(data[25].toFloat());
+    updatePitchLFOAmt(data[26].toFloat());
+    oscLfoAmtPrevValue = data[26].toFloat(); // PICK-UP
+    updatePitchLFORate(data[27].toFloat());
+    oscLfoRatePrevValue = data[27].toFloat(); // PICK-UP
+    updatePitchLFOWaveform(data[28].toInt());
+    updatePitchLFORetrig(data[29].toInt() > 0);
+    updatePitchLFOMidiClkSync(data[30].toInt() > 0); // MIDI CC Only
+    updateFilterLfoRate(data[31].toFloat(), "");
+    filterLfoRatePrevValue = data[31].toFloat(); // PICK-UP
+    updateFilterLFORetrig(data[32].toInt() > 0);
+    updateFilterLFOMidiClkSync(data[33].toInt() > 0);
+    updateFilterLfoAmt(data[34].toFloat());
+    filterLfoAmtPrevValue = data[34].toFloat(); // PICK-UP
+    updateFilterLFOWaveform(data[35].toFloat());
+    updateFilterAttack(data[36].toFloat());
+    updateFilterDecay(data[37].toFloat());
+    updateFilterSustain(data[38].toFloat());
+    updateFilterRelease(data[39].toFloat());
+    updateAttack(data[40].toFloat());
+    updateDecay(data[41].toFloat());
+    updateSustain(data[42].toFloat());
+    updateRelease(data[43].toFloat());
+    updateEffectAmt(data[44].toFloat());
+    fxAmtPrevValue = data[44].toFloat(); // PICK-UP
+    updateEffectMix(data[45].toFloat());
+    fxMixPrevValue = data[45].toFloat(); // PICK-UP
+    updatePitchEnv(data[46].toFloat());
+    velocitySens = data[47].toFloat();
+    groupvec[activeGroupIndex]->setMonophonic(data[49].toInt());
+    //  SPARE1 = data[50].toFloat();
+    //  SPARE2 = data[51].toFloat();
+
+    Serial.print(F("Set Patch: "));
+    Serial.println(data[0]);
+}
+
+FLASHMEM String getCurrentPatchData()
+{
+    auto p = groupvec[activeGroupIndex]->params();
+    return patchName + F(",") + String(groupvec[activeGroupIndex]->getOscLevelA()) + F(",") + String(groupvec[activeGroupIndex]->getOscLevelB()) + F(",") + String(groupvec[activeGroupIndex]->getPinkNoiseLevel() - groupvec[activeGroupIndex]->getWhiteNoiseLevel()) + F(",") + String(p.unisonMode) + F(",") + String(groupvec[activeGroupIndex]->getOscFX()) + F(",") + String(p.detune, 5) + F(",") + String(lfoSyncFreq) + F(",") + String(midiClkTimeInterval) + F(",") + String(lfoTempoValue) + F(",") + String(groupvec[activeGroupIndex]->getKeytrackingAmount()) + F(",") + String(p.glideSpeed, 5) + F(",") + String(p.oscPitchA) + F(",") + String(p.oscPitchB) + F(",") + String(groupvec[activeGroupIndex]->getWaveformA()) + F(",") + String(groupvec[activeGroupIndex]->getWaveformB()) + F(",") +
+           String(groupvec[activeGroupIndex]->getPwmSource()) + F(",") + String(groupvec[activeGroupIndex]->getPwmAmtA()) + F(",") + String(groupvec[activeGroupIndex]->getPwmAmtB()) + F(",") + String(groupvec[activeGroupIndex]->getPwmRate()) + F(",") + String(groupvec[activeGroupIndex]->getPwA()) + F(",") + String(groupvec[activeGroupIndex]->getPwB()) + F(",") + String(groupvec[activeGroupIndex]->getResonance()) + F(",") + String(groupvec[activeGroupIndex]->getCutoff()) + F(",") + String(groupvec[activeGroupIndex]->getFilterMixer()) + F(",") + String(groupvec[activeGroupIndex]->getFilterEnvelope()) + F(",") + String(groupvec[activeGroupIndex]->getPitchLfoAmount(), 5) + F(",") + String(groupvec[activeGroupIndex]->getPitchLfoRate(), 5) + F(",") + String(groupvec[activeGroupIndex]->getPitchLfoWaveform()) + F(",") + String(int(groupvec[activeGroupIndex]->getPitchLfoRetrig())) + F(",") + String(int(groupvec[activeGroupIndex]->getPitchLfoMidiClockSync())) + F(",") + String(groupvec[activeGroupIndex]->getFilterLfoRate(), 5) + F(",") +
+           groupvec[activeGroupIndex]->getFilterLfoRetrig() + F(",") + groupvec[activeGroupIndex]->getFilterLfoMidiClockSync() + F(",") + groupvec[activeGroupIndex]->getFilterLfoAmt() + F(",") + groupvec[activeGroupIndex]->getFilterLfoWaveform() + F(",") + groupvec[activeGroupIndex]->getFilterAttack() + F(",") + groupvec[activeGroupIndex]->getFilterDecay() + F(",") + groupvec[activeGroupIndex]->getFilterSustain() + F(",") + groupvec[activeGroupIndex]->getFilterRelease() + F(",") + groupvec[activeGroupIndex]->getAmpAttack() + F(",") + groupvec[activeGroupIndex]->getAmpDecay() + F(",") + groupvec[activeGroupIndex]->getAmpSustain() + F(",") + groupvec[activeGroupIndex]->getAmpRelease() + F(",") +
+           String(groupvec[activeGroupIndex]->getEffectAmount()) + F(",") + String(groupvec[activeGroupIndex]->getEffectMix()) + F(",") + String(groupvec[activeGroupIndex]->getPitchEnvelope()) + F(",") + String(velocitySens) + F(",") + String(p.chordDetune) + F(",") + String(groupvec[activeGroupIndex]->getMonophonicMode()) + F(",") + String(0.0f) + F(",") + String(0.0f);
+}
+
 void updateSection(byte encIndex, bool moveUp) {
     switch(section) {
         case Section::Osc1:
@@ -1816,6 +1687,34 @@ void updateSection(byte encIndex, bool moveUp) {
     showPatchPage(String(F("ERROR")) + String(encIndex), String((int)section));
 }
 
+FLASHMEM void recallPatch(int patchNo)
+{
+    groupvec[activeGroupIndex]->allNotesOff();
+    groupvec[activeGroupIndex]->closeEnvelopes();
+    File patchFile = SD.open(String(patchNo).c_str());
+    if (!patchFile)
+    {
+        Serial.println(F("File not found"));
+    }
+    else
+    {
+        String data[NO_OF_PARAMS]; // Array of data read in
+        recallPatchData(patchFile, data);
+        setCurrentPatchData(data);
+        patchFile.close();
+    }
+}
+
+FLASHMEM void myProgramChange(byte channel, byte program)
+{
+    state = PATCH;
+    patchNo = program + 1;
+    recallPatch(patchNo);
+    Serial.print(F("MIDI Pgm Change:"));
+    Serial.println(patchNo);
+    state = PARAMETER;
+}
+
 void checkEncoder()
 {
   // Encoder works with relative inc and dec values
@@ -1913,17 +1812,6 @@ void checkEncoder()
   }
 }
 
-void midiCCOut(byte cc, byte value)
-{
-  if (midiOutCh > 0)
-  {
-    usbMIDI.sendControlChange(cc, value, midiOutCh);
-    midi1.sendControlChange(cc, value, midiOutCh);
-    if (MIDIThru == midi::Thru::Off)
-      MIDI.sendControlChange(cc, value, midiOutCh); // MIDI DIN is set to Out
-  }
-}
-
 void CPUMonitor()
 {
   Serial.print(F(" CPU:"));
@@ -1934,6 +1822,127 @@ void CPUMonitor()
   Serial.print(F("  MEM:"));
   Serial.println(AudioMemoryUsageMax());
   delayMicroseconds(500);
+}
+
+
+FLASHMEM void setup()
+{
+    // Initialize the voice groups.
+    uint8_t total = 0;
+    while (total < global.maxVoices())
+    {
+        VoiceGroup *currentGroup = new VoiceGroup{global.SharedAudio[groupvec.size()]};
+
+        for (uint8_t i = 0; total < global.maxVoices() && i < global.maxVoicesPerGroup(); i++)
+        {
+            Voice *v = new Voice(global.Oscillators[i], i);
+            currentGroup->add(v);
+            total++;
+        }
+
+        groupvec.push_back(currentGroup);
+    }
+
+    setupDisplay();
+    setUpSettings();
+    setupHardware();
+
+    AudioMemory(60);
+    global.sgtl5000_1.enable();
+    global.sgtl5000_1.volume(0.5 * SGTL_MAXVOLUME);
+    global.sgtl5000_1.dacVolumeRamp();
+    global.sgtl5000_1.muteHeadphone();
+    global.sgtl5000_1.muteLineout();
+    global.sgtl5000_1.audioPostProcessorEnable();
+    global.sgtl5000_1.enhanceBass(0.85, 0.87, 0, 4); // Normal level, bass level, HPF bypass (1 - on), bass cutoff freq
+    global.sgtl5000_1.enhanceBassDisable();          // Turned on from EEPROM
+
+    cardStatus = SD.begin(BUILTIN_SDCARD);
+    if (cardStatus)
+    {
+        Serial.println(F("SD card is connected"));
+        // Get patch numbers and names from SD card
+        loadPatches();
+        if (patches.size() == 0)
+        {
+            // save an initialised patch to SD card
+            savePatch("1", INITPATCH);
+            loadPatches();
+        }
+    }
+    else
+    {
+        Serial.println(F("SD card is not connected or unusable"));
+        reinitialiseToPanel();
+        showPatchPage(F("No SD"), F("conn'd / usable"));
+    }
+
+    // Read MIDI Channel from EEPROM
+    midiChannel = getMIDIChannel();
+    Serial.println(F("MIDI In Ch:") + String(midiChannel) + F(" (0 is Omni On)"));
+
+    // USB HOST MIDI Class Compliant
+    delay(200); // Wait to turn on USB Host
+    myusb.begin();
+    midi1.setHandleControlChange(myControlChange);
+    midi1.setHandleNoteOff(myNoteOff);
+    midi1.setHandleNoteOn(myNoteOn);
+    midi1.setHandlePitchChange(myPitchBend);
+    midi1.setHandleProgramChange(myProgramChange);
+    midi1.setHandleClock(myMIDIClock);
+    midi1.setHandleStart(myMIDIClockStart);
+    midi1.setHandleStop(myMIDIClockStop);
+    Serial.println(F("USB HOST MIDI Class Compliant Listening"));
+
+    // USB Client MIDI
+    usbMIDI.setHandleControlChange(myControlChange);
+    usbMIDI.setHandleNoteOff(myNoteOff);
+    usbMIDI.setHandleNoteOn(myNoteOn);
+    usbMIDI.setHandlePitchChange(myPitchBend);
+    usbMIDI.setHandleProgramChange(myProgramChange);
+    usbMIDI.setHandleClock(myMIDIClock);
+    usbMIDI.setHandleStart(myMIDIClockStart);
+    usbMIDI.setHandleStop(myMIDIClockStop);
+    Serial.println(F("USB Client MIDI Listening"));
+
+    // MIDI 5 Pin DIN
+    MIDI.begin();
+    MIDI.setHandleNoteOn(myNoteOn);
+    MIDI.setHandleNoteOff(myNoteOff);
+    MIDI.setHandlePitchBend(myPitchBend);
+    MIDI.setHandleControlChange(myControlChange);
+    MIDI.setHandleProgramChange(myProgramChange);
+    MIDI.setHandleClock(myMIDIClock);
+    MIDI.setHandleStart(myMIDIClockStart);
+    MIDI.setHandleStop(myMIDIClockStop);
+    Serial.println(F("MIDI In DIN Listening"));
+
+    volumePrevious = RE_READ; // Force volume control to be read and set to current
+
+    // Read Pitch Bend Range from EEPROM
+    pitchBendRange = getPitchBendRange();
+    // Read Mod Wheel Depth from EEPROM
+    modWheelDepth = getModWheelDepth();
+    // Read MIDI Out Channel from EEPROM
+    midiOutCh = getMIDIOutCh();
+    // Read MIDI Thru mode from EEPROM
+    MIDIThru = getMidiThru();
+    changeMIDIThruMode();
+    // Read Encoder Direction from EEPROM
+    encCW = getEncoderDir();
+    // Read Pick-up enable from EEPROM - experimental feature
+    pickUp = getPickupEnable();
+    // Read bass enhance enable from EEPROM
+    if (getBassEnhanceEnable())
+        global.sgtl5000_1.enhanceBassEnable();
+    // Read oscilloscope enable from EEPROM
+    enableScope(getScopeEnable());
+    // Read VU enable from EEPROM
+    vuMeter = getVUEnable();
+    // Read Filter and Amp Envelope shapes
+    reloadFiltEnv();
+    reloadAmpEnv();
+    reloadGlideShape();
 }
 
 void loop()
