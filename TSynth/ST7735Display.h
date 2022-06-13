@@ -211,7 +211,7 @@ void printSectionControls() {
             alignRight(SectionControls[(int)section][i], 80-10, ys[i]);
         else
         {
-            tft.setCursor(80+8, ys[i]);
+            tft.setCursor(80+9, ys[i]);
             tft.println(SectionControls[(int)section][i]);
         }
 //        if(i >= 2)

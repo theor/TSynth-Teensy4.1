@@ -274,7 +274,7 @@ int getLFOWaveform(int value)
   }
 }
 
-FLASHMEM String getWaveformStr(int value)
+FLASHMEM String getWaveformStr(uint32_t value)
 {
   switch (value)
   {
@@ -1636,43 +1636,66 @@ void updateSection(byte encIndex, bool moveUp) {
         case Section::Osc1:
             switch(encIndex) {
                 case 0:{
-                    auto newVal = indexOf(PITCH, (int8_t) groupvec[activeGroupIndex]->params().oscPitchA, moveUp);
+                    auto newVal = cycleIndexOf(PITCH, (int8_t) groupvec[activeGroupIndex]->params().oscPitchA, moveUp);
                     midiCCOut(CCpitchA, newVal);
                     myControlChange(midiChannel, CCpitchA, newVal);
                     return;
                 }
                 case 1:{
-                    auto newVal = indexOf(WAVEFORMS_A, (uint8_t) groupvec[activeGroupIndex]->getWaveformA(), moveUp);
+                    auto newVal = cycleIndexOf(WAVEFORMS_A, (uint8_t) groupvec[activeGroupIndex]->getWaveformA(), moveUp);
                     midiCCOut(CCoscwaveformA, WAVEFORMS_A[newVal]);
                     updateWaveformA(WAVEFORMS_A[newVal]);
                     return;
                 }
                 case 2: {
-//                    return;
+                    auto idx = cycleIndexOf(LINEARCENTREZERO, groupvec[activeGroupIndex]->getPwA(), moveUp);
+                    midiCCOut(CCpwA, LINEARCENTREZERO[idx]);
+                    updatePWA(LINEARCENTREZERO[idx], LINEAR[idx]);
+                    return;
                 }
-                case 3: {
-//                    return;
+                case 3: /*OSC MIX*/ {
+                    // 77 -> oscmixa 100 -> 0.787
+                    // 0.787 -> indexof linear = 100 -> indexof oscmixa 77
+                    // LINEAR[OSCMIXA[midibyte]]
+                    auto idx = (uint8_t) cycleIndexOfSorted(LINEAR, groupvec[activeGroupIndex]->getOscLevelB(), moveUp);
+                    auto idx2 = indexOfClosest(OSCMIXB, idx, !moveUp);
+                    Serial.print(groupvec[activeGroupIndex]->getOscLevelB());
+                    Serial.print(' ');
+                    Serial.print(idx);
+                    Serial.print(' ');
+                    Serial.println(idx2);
+                    midiCCOut(CCoscLevelA, idx2);
+                    midiCCOut(CCoscLevelB, idx2);
+                    updateOscLevelA(LINEAR[OSCMIXA[idx2]]);
+                    updateOscLevelB(LINEAR[OSCMIXB[idx2]]);
+                    return;
                 }
             }
             break;
         case Section::Osc2:
             switch(encIndex) {
                 case 0:{
-                    auto newVal = indexOf(PITCH, (int8_t) groupvec[activeGroupIndex]->params().oscPitchB, moveUp);
+                    auto newVal = cycleIndexOf(PITCH, (int8_t) groupvec[activeGroupIndex]->params().oscPitchB, moveUp);
                     midiCCOut(CCpitchB, newVal);
                     myControlChange(midiChannel, CCpitchB, newVal);
                     return;
                 }
                 case 1:{
-                    auto newVal = indexOf(WAVEFORMS_B, (uint8_t) groupvec[activeGroupIndex]->getWaveformB(), moveUp);
+                    auto newVal = cycleIndexOf(WAVEFORMS_B, (uint8_t) groupvec[activeGroupIndex]->getWaveformB(), moveUp);
                     midiCCOut(CCoscwaveformB, WAVEFORMS_B[newVal]);
                     updateWaveformB(WAVEFORMS_B[newVal]);
                     return;
                 }
                 case 2: {
-//                    return;
+                    auto idx = cycleIndexOf(LINEARCENTREZERO, groupvec[activeGroupIndex]->getPwB(), moveUp);
+                    midiCCOut(CCpwB, LINEARCENTREZERO[idx]);
+                    updatePWB(LINEARCENTREZERO[idx], LINEAR[idx]);
+                    return;
                 }
-                case 3: {
+                case 3: /*detune*/ {
+
+//      midiCCOut(CCdetune, mux1Read);
+//      myControlChange(midiChannel, CCdetune, mux1Read);
 //                    return;
                 }
             }
