@@ -76,9 +76,6 @@
 #define SETTINGS 8      // Settings page
 #define SETTINGSVALUE 9 // Settings page
 
-#ifdef __CLION_IDE_
-#define FLASHMEM
-#endif
 
 uint32_t state = PARAMETER;
 
@@ -1502,6 +1499,19 @@ FLASHMEM String getCurrentPatchData()
            String(groupvec[activeGroupIndex]->getEffectAmount()) + F(",") + String(groupvec[activeGroupIndex]->getEffectMix()) + F(",") + String(groupvec[activeGroupIndex]->getPitchEnvelope()) + F(",") + String(velocitySens) + F(",") + String(p.chordDetune) + F(",") + String(groupvec[activeGroupIndex]->getMonophonicMode()) + F(",") + String(0.0f) + F(",") + String(0.0f);
 }
 
+
+uint8_t fromMix(float mixA, float mixB)
+{
+    for (size_t i = 0; i < 128; i++)
+    {
+        if (LINEAR[OSCMIXA[i]] == mixA && LINEAR[OSCMIXB[i]] == mixB)
+        {
+            return i;
+        }
+    }
+    return 0;
+}
+
 void updateSection(byte encIndex, bool moveUp) {
     switch(section) {
         case Section::Osc1:
@@ -1528,17 +1538,18 @@ void updateSection(byte encIndex, bool moveUp) {
                     // 77 -> oscmixa 100 -> 0.787
                     // 0.787 -> indexof linear = 100 -> indexof oscmixa 77
                     // LINEAR[OSCMIXA[midibyte]]
-                    auto idx = (uint8_t) cycleIndexOfSorted(LINEAR, groupvec[activeGroupIndex]->getOscLevelB(), moveUp);
-                    auto idx2 = indexOfClosest(OSCMIXB, idx, !moveUp);
-                    Serial.print(groupvec[activeGroupIndex]->getOscLevelB());
-                    Serial.print(' ');
-                    Serial.print(idx);
-                    Serial.print(' ');
-                    Serial.println(idx2);
-                    midiCCOut(CCoscLevelA, idx2);
-                    midiCCOut(CCoscLevelB, idx2);
-                    updateOscLevelA(LINEAR[OSCMIXA[idx2]]);
-                    updateOscLevelB(LINEAR[OSCMIXB[idx2]]);
+
+                    auto midiValue = fromMix(groupvec[activeGroupIndex]->getOscLevelA(), groupvec[activeGroupIndex]->getOscLevelB());
+                    const uint8_t DELTA = 8;
+                    if(moveUp) {
+                        midiValue += min(DELTA, 128 - midiValue);
+                    } else {
+                        midiValue -= min(DELTA, midiValue);
+                    }
+                    midiCCOut(CCoscLevelA, midiValue);
+                    midiCCOut(CCoscLevelB, midiValue);
+                    updateOscLevelA(LINEAR[OSCMIXA[midiValue]]);
+                    updateOscLevelB(LINEAR[OSCMIXB[midiValue]]);
                     return;
                 }
             }

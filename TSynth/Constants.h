@@ -1,7 +1,17 @@
 #pragma once
 
 #include <stdint.h>
+
+#ifndef UNIT_TEST
 #include "Arduino.h"
+#else
+#if __CLION_IDE_
+#define PROGMEM
+#define FLASHMEM
+#endif
+#include <string>
+#define String std::string
+#endif
 
 #define RE_READ -99
 #define PWMWAVEFORM WAVEFORM_SINE
