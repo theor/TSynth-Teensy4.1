@@ -45,8 +45,20 @@ boolean MIDIClkSignal = false;
 uint32_t peakCount = 0;
 uint16_t prevLen = 0;
 
-uint32_t colourPriority[5] = {ST7735_BLACK, ST7735_BLUE, ST7735_YELLOW, ST77XX_ORANGE, ST77XX_DARKRED};
+// Pass 8-bit (each) R,G,B, get back 16-bit packed color
+inline uint16_t Color565(uint8_t r, uint8_t g, uint8_t b) {
+    return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
+}
+const int TS_RED = Color565(240,57, 70);
+const int TS_PALE = Color565(241,250, 238);
+const int TS_PALEBLUE = Color565(168,218, 220);
+const int TS_BLUE = Color565(69, 123, 157);
+const int TS_DARKBLUE = Color565(29, 53, 87);
 
+
+uint32_t colourPriority[5] = {ST7735_BLACK, TS_PALEBLUE, TS_BLUE, ST77XX_ORANGE, TS_RED};
+// f1faee a8dadc 457b9d 1d3557
+// green 06d6a0
 enum class Section {
 //    None,
     Osc1,
@@ -172,23 +184,23 @@ void printSectionControls() {
 //    for (int i = 0; i < 2; ++i) {
 //        uint8_t x1 = 6 + i * 80;
 //        uint8_t x2 = -6 + (i+1) * 80;
-//        tft.drawRect(x1 - 3, squareY-3, 7, 7, ST7735_RED);
-//        tft.drawFastVLine(x1, squareY, ys[0] - 12 - squareY, ST7735_RED);
-//        tft.drawRect(x2 - 3, squareY-3, 7, 7, ST7735_RED);
-//        tft.drawFastVLine(x2, squareY, ys[1] - 2 - squareY, ST7735_RED);
-//        tft.drawFastHLine(x2-4, ys[1] - 2, 4, ST7735_RED);
+//        tft.drawRect(x1 - 3, squareY-3, 7, 7, TS_RED);
+//        tft.drawFastVLine(x1, squareY, ys[0] - 12 - squareY, TS_RED);
+//        tft.drawRect(x2 - 3, squareY-3, 7, 7, TS_RED);
+//        tft.drawFastVLine(x2, squareY, ys[1] - 2 - squareY, TS_RED);
+//        tft.drawFastHLine(x2-4, ys[1] - 2, 4, TS_RED);
 //    }
 
         for (int i = 0; i < 4; ++i) {
             uint8_t x = 80 + (i*2-3)*5;
-        tft.drawRect(x - 3, squareY-3, 7, 7, ST7735_RED);
+        tft.drawRect(x - 3, squareY-3, 7, 7, TS_RED);
         bool isTopLine = i == 0 || i == 3;
         uint8_t y = isTopLine ? ys[0] : ys[1];
-        tft.drawFastVLine(x, squareY + 3, y - (isTopLine ? 12 : 4) - squareY - 3, ST7735_RED);
+        tft.drawFastVLine(x, squareY + 3, y - (isTopLine ? 12 : 4) - squareY - 3, TS_RED);
         if(isTopLine) {
-            tft.drawFastHLine(x - 3, y - 12, 7, ST7735_RED);
+            tft.drawFastHLine(x - 3, y - 12, 7, TS_RED);
         } else {
-            tft.drawFastHLine(i == 1 ? (x-4) : x, y - 4, 4, ST7735_RED);
+            tft.drawFastHLine(i == 1 ? (x-4) : x, y - 4, 4, TS_RED);
         }
 
 //        tft.drawFastVLine(i*40, 90, 125, ST7735_MAGENTA);
@@ -254,7 +266,7 @@ FLASHMEM void renderBootUpPage()
   tft.setCursor(5, 70);
   tft.setTextSize(1);
   tft.println(F("TSynth"));
-  tft.setTextColor(ST7735_RED);
+  tft.setTextColor(TS_RED);
   tft.setFont(&FreeSans9pt7b);
   tft.setCursor(110, 95);
   tft.println(VERSION);
@@ -280,7 +292,7 @@ FLASHMEM void renderCurrentPatchPage() {
   tft.fillScreen(ST7735_BLACK);
   tft.setFont(&FreeSans9pt7b);
   tft.setCursor((currentPgmNum.length() == 1) ? 14 : 5, 33);
-  tft.setTextColor(ST7735_YELLOW);
+  tft.setTextColor(TS_BLUE );
   tft.setTextSize(1);
   tft.println(currentPgmNum);
 
@@ -345,7 +357,7 @@ FLASHMEM void renderCurrentPatchPage() {
       tft.print(dbgY);
   }
 
-  tft.drawFastHLine(10, 39, tft.width() - 20, ST7735_RED);
+  tft.drawFastHLine(10, 39, tft.width() - 20, TS_RED);
   tft.setFont(&FreeSans9pt7b);
   tft.setTextColor(ST7735_YELLOW);
 
@@ -411,7 +423,7 @@ FLASHMEM void renderCurrentParameterPage() {
       //        tft.setTextSize(1);
       //      }
       renderPeak();
-      tft.drawFastHLine(10, 63, tft.width() - 20, ST7735_RED);
+      tft.drawFastHLine(10, 63, tft.width() - 20, TS_RED);
       tft.setCursor(1, 90);
       tft.setTextColor(ST7735_WHITE);
       tft.println(currentValue);
@@ -444,7 +456,7 @@ FLASHMEM void renderDeletePatchPage() {
   tft.setTextColor(ST7735_YELLOW);
   tft.setTextSize(1);
   tft.println(F("Delete?"));
-  tft.drawFastHLine(10, 60, tft.width() - 20, ST7735_RED);
+  tft.drawFastHLine(10, 60, tft.width() - 20, TS_RED);
   tft.setFont(&FreeSans9pt7b);
   tft.setCursor(0, 78);
   tft.setTextColor(ST7735_YELLOW);
@@ -479,7 +491,7 @@ FLASHMEM void renderSavePage() {
   tft.setTextColor(ST7735_YELLOW);
   tft.setTextSize(1);
   tft.println(F("Save?"));
-  tft.drawFastHLine(10, 60, tft.width() - 20, ST7735_RED);
+  tft.drawFastHLine(10, 60, tft.width() - 20, TS_RED);
   tft.setFont(&FreeSans9pt7b);
   tft.setCursor(0, 78);
   tft.setTextColor(ST7735_YELLOW);
@@ -516,7 +528,7 @@ FLASHMEM void renderPatchNamingPage()
   tft.setTextSize(1);
   tft.setCursor(0, 53);
   tft.println(F("Rename Patch"));
-  tft.drawFastHLine(10, 63, tft.width() - 20, ST7735_RED);
+  tft.drawFastHLine(10, 63, tft.width() - 20, TS_RED);
   tft.setTextColor(ST7735_WHITE);
   tft.setCursor(5, 90);
   tft.println(newPatchName);
@@ -568,7 +580,7 @@ FLASHMEM void renderSettingsPage() {
   tft.setCursor(0, 53);
   tft.println(currentSettingsOption);
   if (currentSettingsPart == SETTINGS) renderUpDown(140, 42, ST7735_YELLOW);
-  tft.drawFastHLine(10, 63, tft.width() - 20, ST7735_RED);
+  tft.drawFastHLine(10, 63, tft.width() - 20, TS_RED);
   tft.setTextColor(ST7735_WHITE);
   tft.setCursor(5, 90);
   tft.println(currentSettingsValue);
