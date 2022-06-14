@@ -130,38 +130,28 @@ void nextSection() {
             break;
     }
 }
-void printSection() {
+const __FlashStringHelper* printSection() {
     switch(section){
-//        case Section::None:
-//            tft.println(F("None"));
-//            break;
         case Section::Osc1:
-            tft.println(F("Osc1"));
-            break;
+            return F("OSC 1");
         case Section::Osc2:
-            tft.println(F("Osc2"));
-            break;
+            return F("OSC 2");
         case Section::Noise:
-            tft.println(F("Noise"));
-            break;
+            return F("NOISE");
         case Section::LFO:
-            tft.println(F("LFO"));
-            break;
+            return F("LFO");
         case Section::FilterEnvelope:
-            tft.println(F("FilterEnvelope"));
-            break;
+            return F("FILTER ENV");
         case Section::Filter:
-            tft.println(F("Filter"));
-            break;
+            return F("FILTER");
         case Section::FilterLFO:
-            tft.println(F("FilterLFO"));
-            break;
+            return F("FILTER LFO");
         case Section::Amp:
-            tft.println(F("Amp"));
-            break;
+            return F("ENV");
         case Section::FX:
-            tft.println(F("FX"));
-            break;
+            return F("FX");
+        default:
+            return F("???");
     }
 }
 
@@ -176,8 +166,9 @@ void alignRight(const String& str, int16_t x, int16_t y) {
 }
 
 void printSectionControls() {
-    uint8_t ys[4] = {108, 124, 124, 108};
-    const uint8_t squareY = 85;
+    uint8_t refY = 100;
+    uint8_t ys[4] = {refY, refY+16, refY+16, refY};
+    const uint8_t squareY = refY - 23;
 //    for (int i = 0; i < 2; ++i) {
 //        uint8_t x1 = 6 + i * 80;
 //        uint8_t x2 = -6 + (i+1) * 80;
@@ -203,7 +194,7 @@ void printSectionControls() {
 //        tft.drawFastVLine(i*40, 90, 125, ST7735_MAGENTA);
     }
     tft.setTextSize(1);
-    tft.setCursor(1, 100);
+    tft.setCursor(1, refY - 8);
     tft.setFont(&Open_Sans_Regular_11);
     tft.setTextWrap(false);
     for (int i = 0; i < 4; ++i) {
@@ -211,7 +202,7 @@ void printSectionControls() {
             alignRight(SectionControls[(int)section][i], 80-10, ys[i]);
         else
         {
-            tft.setCursor(80+9, ys[i]);
+            tft.setCursor(80+10, ys[i]);
             tft.println(SectionControls[(int)section][i]);
         }
 //        if(i >= 2)
@@ -287,8 +278,8 @@ FLASHMEM void renderPeak() {
 
 FLASHMEM void renderCurrentPatchPage() {
   tft.fillScreen(ST7735_BLACK);
-  tft.setFont(&FreeSans12pt7b);
-  tft.setCursor(5, 53);
+  tft.setFont(&FreeSans9pt7b);
+  tft.setCursor((currentPgmNum.length() == 1) ? 14 : 5, 33);
   tft.setTextColor(ST7735_YELLOW);
   tft.setTextSize(1);
   tft.println(currentPgmNum);
@@ -297,8 +288,8 @@ FLASHMEM void renderCurrentPatchPage() {
   tft.setFont(&Org_01);
 
   if (MIDIClkSignal) {
-    tft.fillRect(100, 27, 14, 7, ST77XX_ORANGE);
-    tft.setCursor(101, 32);
+    tft.fillRect(123, 6, 14, 7, ST77XX_ORANGE);
+    tft.setCursor(123+1, 11);
     tft.println(F("CK"));
   }
   renderPeak();
@@ -318,12 +309,12 @@ FLASHMEM void renderCurrentPatchPage() {
   }
 
   // Draw rectangles to represent each voice.
-  uint8_t max_rows = 3;
+  uint8_t max_rows = 1;
   uint8_t x_step = 10;
   uint8_t y_step = 10;
   uint8_t x_end = 147;
-  uint8_t x_start = x_end - (x_step * ceil(global.maxVoices() / float(max_rows))) + x_step;
-  uint8_t y_start = 27;
+  uint8_t x_start = 2;
+  uint8_t y_start = 7;
   uint8_t y_end = 47;
   uint8_t idx = 0;
   for (uint8_t y = y_start; y <= y_end; y += y_step) {
@@ -336,20 +327,42 @@ FLASHMEM void renderCurrentPatchPage() {
         break;
       }
     }
+      if (idx >= global.maxVoices())
+          break;
   }
 
-  tft.drawFastHLine(10, 63, tft.width() - 20, ST7735_RED);
+  if(dbgMode != 0) {
+      tft.setCursor(10, 10);
+      tft.setFont(nullptr);
+      tft.setTextColor(ST7735_YELLOW);
+
+      tft.print(dbgMode == 1 ? '*' : ' ');
+      tft.print('X');
+      tft.print(dbgX);
+      tft.print(' ');
+      tft.print(dbgMode == 1 ? ' ' : '*');
+      tft.print('Y');
+      tft.print(dbgY);
+  }
+
+  tft.drawFastHLine(10, 39, tft.width() - 20, ST7735_RED);
   tft.setFont(&FreeSans9pt7b);
   tft.setTextColor(ST7735_YELLOW);
-  tft.setCursor(30, 45);
-  tft.setTextColor(ST7735_WHITE);
-  tft.println(currentPatchName.substring(0, min(currentPatchName.length(), 8u)));
-  if(currentPatchName.length() >= 8) {
-      tft.setCursor(30, 60);
-      tft.println(currentPatchName.substring(8)); }
 
-    tft.setCursor(1, 80);
-    printSection();
+  tft.setCursor(36, 33);
+
+  tft.setTextColor(ST7735_WHITE);
+  tft.println(currentPatchName);
+//  if(currentPatchName.length() >= 8) {
+//      tft.setCursor(30, 60);
+//      tft.println(currentPatchName.substring(8)); }
+
+    int16_t x, y;
+    uint16_t w, h;
+    auto sectionName = printSection();
+    tft.getTextBounds(sectionName, 10, 10, &x, &y, &w, &h);
+    tft.setCursor(80 - w/2, 62);
+    tft.print(sectionName);
 
     printSectionControls();
 }
@@ -598,7 +611,8 @@ FLASHMEM void enableScope(boolean enable) {
 }
 
 void displayThread() {
-  threads.delay(2000); //Give bootup page chance to display
+//  threads.delay(2000); //Give bootup page chance to display
+  threads.delay(200); //Give bootup page chance to display
   while (1) {
     switch (state) {
       case PARAMETER:

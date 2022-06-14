@@ -1743,8 +1743,25 @@ void checkEncoder()
         }
 //    }
   int8_t delta = encoder.getDelta();
+
+    if(sectionSwitch.numClicks() == 3) {
+        if(dbgMode == 0)
+            dbgMode = 1;
+        else
+            dbgMode = 0;
+    }
+    if(dbgMode != 0) {
+        if(sectionSwitch.numClicks() == 1)
+            dbgMode = dbgMode == 1 ? 2 : 1;
+        if(dbgMode == 1)
+            dbgX += delta;
+        else
+            dbgY += delta;
+        return;
+    }
   if (delta > 0)
   {
+
     switch (state)
     {
     case PARAMETER:
@@ -1867,6 +1884,7 @@ FLASHMEM void setup()
     global.sgtl5000_1.audioPostProcessorEnable();
     global.sgtl5000_1.enhanceBass(0.85, 0.87, 0, 4); // Normal level, bass level, HPF bypass (1 - on), bass cutoff freq
     global.sgtl5000_1.enhanceBassDisable();          // Turned on from EEPROM
+//    global.sgtl5000_1.adcHighPassFilterDisable();
 
     cardStatus = SD.begin(BUILTIN_SDCARD);
     if (cardStatus)

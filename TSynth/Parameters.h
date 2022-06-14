@@ -39,3 +39,7 @@ extern float filterLfoRatePrevValue;
 extern float filterLfoAmtPrevValue;
 extern float fxAmtPrevValue;
 extern float fxMixPrevValue;
+
+extern int dbgMode;
+extern uint8_t dbgX;
+extern uint8_t dbgY;

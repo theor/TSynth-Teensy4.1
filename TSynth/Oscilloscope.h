@@ -2,6 +2,7 @@
 #define Oscilloscope_h_
 #include "AudioStream.h"
 #include "ST7735_t3.h"
+#include "Parameters.h"
 
 uint8_t bufferBlock = 0;
 uint8_t bufcount = 0;
@@ -32,15 +33,22 @@ void Oscilloscope::ScreenSetup(ST7735_t3 *screen) {
 
 void Oscilloscope::Display() {
   pixel_x = 0;
-  prev_pixel_y = map(buffer[0], 32767, -32768, -120, 120) + 63;
-  if (prev_pixel_y < 30) prev_pixel_y = 30;
-  if (prev_pixel_y > 100)prev_pixel_y = 100;
+  const uint8_t Ymed = 40;
+  const uint8_t Ydelta = 20;
+  const uint8_t minY = Ymed-Ydelta;
+  const uint8_t maxY = Ymed + Ydelta;
+  prev_pixel_y = map(buffer[0], 32767, -32768, -120, 120) + Ymed;
+  if (prev_pixel_y < minY) prev_pixel_y = minY;
+  if (prev_pixel_y > maxY)prev_pixel_y = maxY;
 
   for (uint8_t i = 0; i < AUDIO_BLOCK_SAMPLES - 1; i++) {
-    pixel_y = map(buffer[i], 32767, -32768, -120, 120) + 63;
-    if (pixel_y < 30) pixel_y = 30;
-    if (pixel_y > 100)pixel_y = 100;
-    display->drawLine(pixel_x + 15, prev_pixel_y, pixel_x + 16, pixel_y, 0x07B0);
+    pixel_y = map(buffer[i], 32767, -32768, -120, 120) + Ymed;
+    if (pixel_y < minY) pixel_y = minY;
+    if (pixel_y > maxY)pixel_y = maxY;
+
+    // don't draw segments overlapping the red separator line
+    if(prev_pixel_y != Ymed || pixel_y != Ymed)
+        display->drawLine(pixel_x + 15, prev_pixel_y, pixel_x + 16, pixel_y, 0x07B0);
     prev_pixel_y = pixel_y;
     pixel_x++;
   }
