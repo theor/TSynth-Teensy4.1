@@ -408,7 +408,7 @@ FLASHMEM void renderCurrentParameterPage() {
       tft.fillScreen(ST7735_BLACK);
       tft.setFont(&FreeSans12pt7b);
       tft.setCursor(0, 53);
-      tft.setTextColor(ST7735_YELLOW);
+      tft.setTextColor(TS_BLUE);
       tft.setTextSize(1);
       tft.println(currentParameter);
 
