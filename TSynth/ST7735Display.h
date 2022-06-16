@@ -49,11 +49,11 @@ uint16_t prevLen = 0;
 inline uint16_t Color565(uint8_t r, uint8_t g, uint8_t b) {
     return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
 }
-const int TS_RED = Color565(240,57, 70);
-const int TS_PALE = Color565(241,250, 238);
-const int TS_PALEBLUE = Color565(168,218, 220);
-const int TS_BLUE = Color565(69, 123, 157);
-const int TS_DARKBLUE = Color565(29, 53, 87);
+const uint32_t TS_RED = Color565(240,57, 70);
+const uint32_t TS_PALE = Color565(241,250, 238);
+const uint32_t TS_PALEBLUE = Color565(168,218, 220);
+const uint32_t TS_BLUE = Color565(69, 123, 157);
+const uint32_t TS_DARKBLUE = Color565(29, 53, 87);
 
 
 uint32_t colourPriority[5] = {ST7735_BLACK, TS_PALEBLUE, TS_BLUE, ST77XX_ORANGE, TS_RED};
@@ -321,7 +321,6 @@ FLASHMEM void renderCurrentPatchPage() {
   }
 
   // Draw rectangles to represent each voice.
-  uint8_t max_rows = 1;
   uint8_t x_step = 10;
   uint8_t y_step = 10;
   uint8_t x_end = 147;

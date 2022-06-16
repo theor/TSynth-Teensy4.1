@@ -14,6 +14,7 @@ struct VoiceParams {
     float mixerLevel;
     int prevNote;
     float glideSpeed;
+    // 0 1 or 2
     int unisonMode;
     uint32_t chordDetune;
     float detune;

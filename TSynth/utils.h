@@ -60,6 +60,16 @@ size_t indexOfClosest(const T(&array)[N] , T value, bool biggerIfNotFound) {
     return biggerIfNotFound ? lastIndexOfSorted(array, value) : indexOfSorted(array, value);
 
 }
+size_t cycleByte(uint8_t value, bool next, bool loop = true) {
+    if(next) {
+        if(value > 0 || loop)
+            value--;
+    } else {
+        if(value < 255 || loop)
+            value++;
+    }
+    return value;
+}
 
 template<typename T, size_t  N>
 size_t cycleIndexOf(const T(&array)[N] , T value, bool next, bool loop = true) {

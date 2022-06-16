@@ -1574,15 +1574,17 @@ void updateSection(byte encIndex, bool moveUp) {
                     updatePWB(LINEARCENTREZERO[idx], LINEAR[idx]);
                     return;
                 }
+                // todo check. chord detune is an enum (unison 2 ?), detune (unison 1?) is a percent. pick a unit for each.
                 case 3: /*detune*/ {
-
-//      midiCCOut(CCdetune, mux1Read);
-//      myControlChange(midiChannel, CCdetune, mux1Read);
-//                    return;
+                    byte mux1Read = cycleByte((uint8_t)groupvec[activeGroupIndex]->params().chordDetune, moveUp, false);
+                    midiCCOut(CCdetune, mux1Read);
+                    myControlChange(midiChannel, CCdetune, mux1Read);
+                    return;
                 }
             }
             break;
         case Section::Noise:
+            // "Noise", "Env", "PWM Rate", "Osc FX"
             switch(encIndex) {
                 case 0:{
                     // return;
@@ -1599,6 +1601,7 @@ void updateSection(byte encIndex, bool moveUp) {
             }
             break;
         case Section::LFO:
+            // "Level", "Waveform", "Rate", "Unison"
             switch(encIndex) {
                 case 0:{
                     // return;
@@ -1610,11 +1613,15 @@ void updateSection(byte encIndex, bool moveUp) {
 //                    return;
                 }
                 case 3: {
-//                    return;
+                    uint8_t newVal = (groupvec[activeGroupIndex]->params().unisonMode + (moveUp ? 1 : 2)) % 3;
+                    midiCCOut(CCunison, newVal);
+                    myControlChange(midiChannel, CCunison, newVal);
+                    return;
                 }
             }
             break;
         case Section::FilterEnvelope:
+            // "ATK", "DECAY", "SUSTN", "REL"
             switch(encIndex) {
                 case 0:{
                     // return;
