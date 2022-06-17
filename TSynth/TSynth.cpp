@@ -1624,16 +1624,28 @@ void updateSection(byte encIndex, bool moveUp) {
             // "ATK", "DECAY", "SUSTN", "REL"
             switch(encIndex) {
                 case 0:{
-                    // return;
+                    auto newVal = cycleIndexOfSorted(ENVTIMES, (uint16_t) groupvec[activeGroupIndex]->getFilterAttack(), moveUp, false);
+                    midiCCOut(CCfilterattack, newVal);
+                    myControlChange(midiChannel, CCfilterattack, newVal);
+                    return;
                 }
                 case 1:{
-                    // return;
+                    auto newVal = cycleIndexOfSorted(ENVTIMES, (uint16_t) groupvec[activeGroupIndex]->getFilterDecay(), moveUp, false);
+                    midiCCOut(CCfilterdecay, newVal);
+                    myControlChange(midiChannel, CCfilterdecay, newVal);
+                    return;
                 }
                 case 2: {
-//                    return;
+                    auto newVal = cycleIndexOfSorted(LINEAR, groupvec[activeGroupIndex]->getFilterSustain(), moveUp, false);
+                    midiCCOut(CCfiltersustain, newVal);
+                    myControlChange(midiChannel, CCfiltersustain, newVal);
+                    return;
                 }
                 case 3: {
-//                    return;
+                    auto newVal = cycleIndexOfSorted(ENVTIMES, (uint16_t) groupvec[activeGroupIndex]->getFilterRelease(), moveUp, false);
+                    midiCCOut(CCfilterrelease, newVal);
+                    myControlChange(midiChannel, CCfilterrelease, newVal);
+                    return;
                 }
             }
             break;
@@ -1670,18 +1682,31 @@ void updateSection(byte encIndex, bool moveUp) {
             }
             break;
         case Section::Amp:
+            // "ATK", "DECAY", "SUSTN", "REL"
             switch(encIndex) {
                 case 0:{
-                    // return;
+                    auto newVal = cycleIndexOfSorted(ENVTIMES, (uint16_t) groupvec[activeGroupIndex]->getAmpAttack(), moveUp, false);
+                    midiCCOut(CCampattack, newVal);
+                    myControlChange(midiChannel, CCampattack, newVal);
+                    return;
                 }
                 case 1:{
-                    // return;
+                    auto newVal = cycleIndexOfSorted(ENVTIMES, (uint16_t) groupvec[activeGroupIndex]->getAmpDecay(), moveUp, false);
+                    midiCCOut(CCampdecay, newVal);
+                    myControlChange(midiChannel, CCampdecay, newVal);
+                    return;
                 }
                 case 2: {
-//                    return;
+                    auto newVal = cycleIndexOfSorted(LINEAR, groupvec[activeGroupIndex]->getAmpSustain(), moveUp, false);
+                    midiCCOut(CCampsustain, newVal);
+                    myControlChange(midiChannel, CCampsustain, newVal);
+                    return;
                 }
                 case 3: {
-//                    return;
+                    auto newVal = cycleIndexOfSorted(ENVTIMES, (uint16_t) groupvec[activeGroupIndex]->getAmpRelease(), moveUp, false);
+                    midiCCOut(CCamprelease, newVal);
+                    myControlChange(midiChannel, CCamprelease, newVal);
+                    return;
                 }
             }
             break;
