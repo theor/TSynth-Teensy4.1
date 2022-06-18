@@ -15,7 +15,7 @@
 #define   CCpitchA 26
 #define   CCpitchB 27
 #define   CCpitchenv 28
-#define   CCosclforetrig  30//Off/On
+#define   CCosclforetrig  30//Off/On midi only
 #define   CCfilterlforetrig  31//Off/On
 #define   CCfilterres 71
 #define   CCamprelease  72

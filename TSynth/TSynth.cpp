@@ -1512,6 +1512,10 @@ uint8_t fromMix(float mixA, float mixB)
     return 0;
 }
 
+void sendSysex(String ss) {
+    usbMIDI.sendSysEx(ss.length(), reinterpret_cast<const uint8_t *>(ss.c_str()), false);
+}
+
 void updateSection(byte encIndex, bool moveUp) {
     switch(section) {
         case Section::Osc1:
@@ -1587,24 +1591,39 @@ void updateSection(byte encIndex, bool moveUp) {
             // "Noise", "Env", "PWM Rate", "Osc FX"
             switch(encIndex) {
                 case 0:{
-                    // return;
                     float value = groupvec[activeGroupIndex]->getPinkNoiseLevel() > 0
                                   ? groupvec[activeGroupIndex]->getPinkNoiseLevel()
                                   : (- groupvec[activeGroupIndex]->getWhiteNoiseLevel());
                     byte mux1Read = cycleIndexOfSorted(LINEARCENTREZERO,
                                                        value, moveUp, false);
+
                     midiCCOut(CCnoiseLevel, mux1Read);
                     myControlChange(midiChannel, CCnoiseLevel, mux1Read);
                     return;
                 }
                 case 1:{
-                    // return;
+                    float value = groupvec[activeGroupIndex]->getPitchEnvelope() / OSCMODMIXERMAX;
+
+                    byte mux1Read = cycleIndexOfSorted(LINEARCENTREZERO,
+                                                       value, moveUp, false);
+                    midiCCOut(CCpitchenv, mux1Read);
+                    myControlChange(midiChannel, CCpitchenv, mux1Read);
+
+                     return;
                 }
                 case 2: {
-//                    return;
+                    float value = groupvec[activeGroupIndex]->getPwmRate();
+                    byte mux1Read = cycleIndexOfSorted(PWMRATE,
+                                                       value, moveUp, false);
+                    midiCCOut(CCpwmRate, mux1Read);
+                    myControlChange(midiChannel, CCpwmRate, mux1Read);
+                    return;
                 }
                 case 3: {
-//                    return;
+                    byte value = (groupvec[activeGroupIndex]->getOscFX() + 3 + (moveUp ? 1 : -1)) % 3;
+                    midiCCOut(CCoscfx, value);
+                    myControlChange(midiChannel, CCoscfx, value);
+                    return;
                 }
             }
             break;
@@ -1612,13 +1631,35 @@ void updateSection(byte encIndex, bool moveUp) {
             // "Level", "Waveform", "Rate", "Unison"
             switch(encIndex) {
                 case 0:{
-                    // return;
+                    float value = groupvec[activeGroupIndex]->getPitchLfoAmount();
+                    byte mux1Read = cycleIndexOfSorted(POWER,
+                                                       value, moveUp, false);
+                    midiCCOut(CCosclfoamt, mux1Read);
+                    myControlChange(midiChannel, CCosclfoamt, mux1Read);
+                    return;
                 }
                 case 1:{
-                    // return;
+                    auto newVal = cycleIndexOf(WAVEFORMS_LFO, (uint8_t) groupvec[activeGroupIndex]->getPitchLfoWaveform(), moveUp);
+                    midiCCOut(CCoscwaveformA, WAVEFORMS_LFO_MIDI[newVal]);
+                    myControlChange(midiChannel, CCoscLfoWaveform, WAVEFORMS_LFO_MIDI[newVal]);
+                     return;
                 }
                 case 2: {
-//                    return;
+
+                    byte newVal = 0;
+                    if (groupvec[activeGroupIndex]->getPitchLfoMidiClockSync())
+                    {
+                        newVal = cycleIndexOfSorted(LFOTEMPO,
+                                                    groupvec[activeGroupIndex]->getPitchLfoRate() / lfoSyncFreq, moveUp, false);
+                    }
+                    else
+                    {
+                        newVal = cycleIndexOfSorted(POWER,
+                                                    groupvec[activeGroupIndex]->getPitchLfoRate() / LFOMAXRATE, moveUp, false);
+                    }
+                    midiCCOut(CCoscLfoRate, newVal);
+                    myControlChange(midiChannel, CCoscLfoRate, newVal);
+                    return;
                 }
                 case 3: {
                     uint8_t newVal = (groupvec[activeGroupIndex]->params().unisonMode + (moveUp ? 1 : 2)) % 3;

@@ -41,6 +41,6 @@ float filterLfoAmtPrevValue = 0.0f;//Need to set these when patch loaded
 float fxAmtPrevValue = 0.0f;//Need to set these when patch loaded
 float fxMixPrevValue = 0.0f;//Need to set these when patch loaded
 
-int dbgMode = 2;
+int dbgMode = 0;
 uint8_t dbgX = 108;
 uint8_t dbgY = 0;
