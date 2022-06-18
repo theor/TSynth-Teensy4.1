@@ -179,7 +179,7 @@ void alignRight(const String& str, int16_t x, int16_t y) {
 
 void printSectionControls() {
     uint8_t refY = 100;
-    uint8_t ys[4] = {refY, refY+16, refY+16, refY};
+    uint8_t ys[4] = {refY, (uint8_t)(refY+16), (uint8_t)refY+16, refY};
     const uint8_t squareY = refY - 23;
 //    for (int i = 0; i < 2; ++i) {
 //        uint8_t x1 = 6 + i * 80;

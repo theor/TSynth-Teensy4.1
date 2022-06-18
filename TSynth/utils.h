@@ -92,10 +92,9 @@ size_t cycleIndexOf(const T(&array)[N] , T value, bool next, bool loop = true) {
 template<typename T, size_t  N>
 size_t cycleIndexOfSorted(const T(&array)[N] , T value, bool next, bool loop = true) {
     for (size_t i = 0; i < N; ++i) {
-        if(value < array[i]) { return next ? i : (i -1); }
         if(value == array[i]) {
             if(next){
-//                while(value == array[i] && i < N) i++;
+                while(value == array[i] && i < N) i++;
                 if(i >= N && !loop)
                     return N - 1;
                 return (i) % N;
@@ -105,6 +104,7 @@ size_t cycleIndexOfSorted(const T(&array)[N] , T value, bool next, bool loop = t
                 return (i+N-1) % N;
             }
         }
+        if(value < array[i]) { return next ? i : (i - 2); }
     }
     return 0;
 }

@@ -433,7 +433,7 @@ FLASHMEM void updateNoiseLevel(float value)
   }
   else if (value < 0)
   {
-    white = abs(value);
+    white = - value;
   }
 
   groupvec[activeGroupIndex]->setPinkNoiseLevel(pink);
@@ -441,11 +441,11 @@ FLASHMEM void updateNoiseLevel(float value)
 
   if (value > 0)
   {
-    showCurrentParameterPage(F("Noise Level"), F("Pink ") + String(value));
+    showCurrentParameterPage(F("Noise Level"), F("Pink ") + String(pink));
   }
   else if (value < 0)
   {
-    showCurrentParameterPage(F("Noise Level"), F("White ") + String(abs(value)));
+    showCurrentParameterPage(F("Noise Level"), F("White ") + String(white));
   }
   else
   {
@@ -1588,6 +1588,14 @@ void updateSection(byte encIndex, bool moveUp) {
             switch(encIndex) {
                 case 0:{
                     // return;
+                    float value = groupvec[activeGroupIndex]->getPinkNoiseLevel() > 0
+                                  ? groupvec[activeGroupIndex]->getPinkNoiseLevel()
+                                  : (- groupvec[activeGroupIndex]->getWhiteNoiseLevel());
+                    byte mux1Read = cycleIndexOfSorted(LINEARCENTREZERO,
+                                                       value, moveUp, false);
+                    midiCCOut(CCnoiseLevel, mux1Read);
+                    myControlChange(midiChannel, CCnoiseLevel, mux1Read);
+                    return;
                 }
                 case 1:{
                     // return;
