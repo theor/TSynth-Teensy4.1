@@ -63,9 +63,9 @@ const String SectionControls[9][4] = {
         { "Level", "Waveform", "Rate", "Unison"}, // LFO
         { "ATK", "DECAY", "SUSTN", "REL"}, // FilterEnvelope
         { "Cutoff", "Resonance", "Type", "Env"}, // Filter
-        { "Level", "Waveform", "Rate/Tempo", "Retrig"}, // FilterLFO
+        { "Level", "Waveform", "Rate", "Retrig/Tempo"}, // FilterLFO
         { "ATK", "DECAY", "SUSTN", "REL"}, // Amp
-        { "Glide", "FX Amt", "FX Mix", "4"}, // FX
+        { "Glide", "FX Amt", "FX Mix", ""}, // FX
 };
 
 const uint8_t PROGMEM WAVEFORMS_A[8] = {

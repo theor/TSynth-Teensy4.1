@@ -1737,7 +1737,7 @@ void updateSection(byte encIndex, bool moveUp) {
             }
             break;
         case Section::FilterLFO:
-            // "Level", "Waveform", "Rate/Tempo", "Retrig"
+            // "Level", "Waveform", "Rate", "Retrig/Tempo"
             switch(encIndex) {
                 case 0:{
                     float value = groupvec[activeGroupIndex]->getFilterLfoAmt();
@@ -1754,9 +1754,34 @@ void updateSection(byte encIndex, bool moveUp) {
                     return;
                 }
                 case 2: {
-//                    return;
+                    byte newVal = 0;
+                    if (groupvec[activeGroupIndex]->getFilterLfoMidiClockSync())
+                    {
+                        newVal = cycleIndexOfSorted(LFOTEMPO,
+                                                    groupvec[activeGroupIndex]->getFilterLfoRate() / lfoSyncFreq, moveUp, false);
+                    }
+                    else
+                    {
+                        newVal = cycleIndexOfSorted(POWER,
+                                                    groupvec[activeGroupIndex]->getFilterLfoRate() / LFOMAXRATE, moveUp, false);
+                    }
+                    midiCCOut(CCfilterlforate, newVal);
+                    myControlChange(midiChannel, CCfilterlforate, newVal);
+                    return;
                 }
                 case 3: {
+                    if(moveUp) // tempo
+                    {
+                        bool newVal = !groupvec[activeGroupIndex]->getFilterLfoMidiClockSync();
+                        midiCCOut(CCfilterLFOMidiClkSync, newVal);
+                        myControlChange(midiChannel, CCfilterLFOMidiClkSync, newVal);
+
+                    } else // retrig
+                    {
+                        bool newVal = !groupvec[activeGroupIndex]->getFilterLfoRetrig();
+                        midiCCOut(CCfilterlforetrig, newVal);
+                        myControlChange(midiChannel, CCfilterlforetrig, newVal);
+                    }
 //                    return;
                 }
             }
