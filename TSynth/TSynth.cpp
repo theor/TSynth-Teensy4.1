@@ -775,8 +775,8 @@ void myControlChange(byte channel, byte control, byte value)
       return; // PICK-UP
 
     // If <1.1 there is noise at high cutoff freq
-    updateFilterRes((14.29f * POWER[value]) + 0.71f);
-    resonancePrevValue = (14.29f * POWER[value]) + 0.71f; // PICK-UP
+    updateFilterRes(FILTERRESONANCE[value]);
+    resonancePrevValue = FILTERRESONANCE[value]; // PICK-UP
     break;
 
   case CCfiltermixer:
@@ -1640,7 +1640,7 @@ void updateSection(byte encIndex, bool moveUp) {
                 }
                 case 1:{
                     auto newVal = cycleIndexOf(WAVEFORMS_LFO, (uint8_t) groupvec[activeGroupIndex]->getPitchLfoWaveform(), moveUp);
-                    midiCCOut(CCoscwaveformA, WAVEFORMS_LFO_MIDI[newVal]);
+                    midiCCOut(CCoscLfoWaveform, WAVEFORMS_LFO_MIDI[newVal]);
                     myControlChange(midiChannel, CCoscLfoWaveform, WAVEFORMS_LFO_MIDI[newVal]);
                      return;
                 }
@@ -1699,28 +1699,59 @@ void updateSection(byte encIndex, bool moveUp) {
             }
             break;
         case Section::Filter:
+            // "Cutoff", "Resonance", "Type", "Env"
             switch(encIndex) {
                 case 0:{
-                    // return;
+                    auto newVal = cycleIndexOfSorted(FILTERFREQS256, (uint16_t) (groupvec[activeGroupIndex]->getCutoff()), moveUp, false);
+                    // array of 256 -> byte, have to move twice to divide later
+                    if(moveUp){
+                        if(newVal < 255)
+                            newVal++;
+                    }else {
+                        if(newVal > 0)
+                            newVal--;
+                    }
+                    newVal /= 2;
+                    midiCCOut(CCfilterfreq, newVal);
+                    myControlChange(midiChannel, CCfilterfreq, newVal);
+                    return;
                 }
                 case 1:{
-                    // return;
+                    auto newVal = cycleIndexOfSorted(FILTERRESONANCE, groupvec[activeGroupIndex]->getResonance(), moveUp, false);
+                    midiCCOut(CCfilterres, newVal);
+                    myControlChange(midiChannel, CCfilterres, newVal);
+                    return;
                 }
                 case 2: {
-//                    return;
+                    auto newVal = cycleIndexOfSorted(LINEAR_FILTERMIXER, groupvec[activeGroupIndex]->getFilterMixer(), moveUp, false);
+                    midiCCOut(CCfiltermixer, newVal);
+                    myControlChange(midiChannel, CCfiltermixer, newVal);
+                    return;
                 }
                 case 3: {
-//                    return;
+                    auto newVal = cycleIndexOfSorted(LINEARCENTREZERO, groupvec[activeGroupIndex]->getFilterEnvelope(), moveUp, false);
+                    midiCCOut(CCfilterenv, newVal);
+                    myControlChange(midiChannel, CCfilterenv, newVal);
+                    return;
                 }
             }
             break;
         case Section::FilterLFO:
+            // "Level", "Waveform", "Rate/Tempo", "Retrig"
             switch(encIndex) {
                 case 0:{
-                    // return;
+                    float value = groupvec[activeGroupIndex]->getFilterLfoAmt();
+                    byte mux1Read = cycleIndexOfSorted(LINEAR,
+                                                       value, moveUp, false);
+                    midiCCOut(CCfilterlfoamt, mux1Read);
+                    myControlChange(midiChannel, CCfilterlfoamt, mux1Read);
+                    return;
                 }
                 case 1:{
-                    // return;
+                    auto newVal = cycleIndexOf(WAVEFORMS_LFO, (uint8_t) groupvec[activeGroupIndex]->getFilterLfoWaveform(), moveUp);
+                    midiCCOut(CCfilterlfowaveform, WAVEFORMS_LFO_MIDI[newVal]);
+                    myControlChange(midiChannel, CCfilterlfowaveform, WAVEFORMS_LFO_MIDI[newVal]);
+                    return;
                 }
                 case 2: {
 //                    return;
@@ -1760,18 +1791,29 @@ void updateSection(byte encIndex, bool moveUp) {
             }
             break;
         case Section::FX:
+            // "Glide", "FX Amt", "FX Mix", "4"
             switch(encIndex) {
                 case 0:{
-                    // return;
+                    auto newVal = cycleIndexOfSorted(POWER, groupvec[activeGroupIndex]->params().glideSpeed, moveUp, false);
+                    midiCCOut(CCglide, newVal);
+                    myControlChange(midiChannel, CCglide, newVal);
+                     return;
                 }
                 case 1:{
-                    // return;
+                    auto newVal = cycleIndexOfSorted(ENSEMBLE_LFO, groupvec[activeGroupIndex]->getEffectAmount(), moveUp, false);
+                    midiCCOut(CCfxamt, newVal);
+                    myControlChange(midiChannel, CCfxamt, newVal);
+                     return;
                 }
                 case 2: {
-//                    return;
+                    auto newVal = cycleIndexOfSorted(LINEAR, groupvec[activeGroupIndex]->getEffectMix(), moveUp, false);
+                    midiCCOut(CCfxmix, newVal);
+                    myControlChange(midiChannel, CCfxmix, newVal);
+                    return;
                 }
                 case 3: {
-//                    return;
+                    // unused
+                    return;
                 }
             }
             break;

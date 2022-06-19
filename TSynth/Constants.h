@@ -19,6 +19,7 @@
 
 extern const char* VERSION;
 extern const uint16_t PROGMEM FILTERFREQS256[256];
+extern const float PROGMEM FILTERRESONANCE[128];
 extern const float PROGMEM POWER[128];
 extern const float PROGMEM NOTEFREQS[128];
 extern const uint16_t PROGMEM ENVTIMES[128];

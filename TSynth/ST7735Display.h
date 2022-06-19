@@ -623,7 +623,7 @@ FLASHMEM void enableScope(boolean enable) {
 
 void displayThread() {
 //  threads.delay(2000); //Give bootup page chance to display
-  threads.delay(200); //Give bootup page chance to display
+  threads.delay(500); //Give bootup page chance to display
   while (1) {
     switch (state) {
       case PARAMETER:
