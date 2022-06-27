@@ -71,7 +71,7 @@ enum class Section {
     Amp,
     FX
 };
-Section section = Section::Osc1;
+Section section = Section::Filter;
 
 void prevSection() {
     switch(section) {
@@ -306,41 +306,51 @@ FLASHMEM void renderCurrentPatchPage() {
   }
   renderPeak();
 
-  
-  uint8_t fillColour[global.maxVoices()] = {};
-  uint8_t borderColour[global.maxVoices()] = {};
-  // Select colours based on voice state.
-  uint8_t i = 0;
-  for (uint8_t group = 0; group < groupvec.size(); group++) {
-    for (uint8_t voice = 0; voice  < groupvec[group]->size(); voice++) {
-      borderColour[i] = group + 1;
-      if ((*groupvec[group])[voice]->on()) fillColour[i] = (*groupvec[group])[voice]->noteId() + 1;
-      else fillColour[i] = 0;
-      i++;
-    }
-  }
+    for (int j = 0; j < 16; ++j) {
+        auto state = buttonStates[j];
+        tft.fillRect(2 + 10*j, 7, 8, 8, colourPriority[state]);
+        tft.drawRect(2 + 10*j, 7, 8, 8, muxedButtons[j].pressed() ? TS_RED : TS_PALEBLUE);
 
-  // Draw rectangles to represent each voice.
-  uint8_t x_step = 10;
-  uint8_t y_step = 10;
-  uint8_t x_end = 147;
-  uint8_t x_start = 2;
-  uint8_t y_start = 7;
-  uint8_t y_end = 47;
-  uint8_t idx = 0;
-  for (uint8_t y = y_start; y <= y_end; y += y_step) {
-    for (uint8_t x = x_start; x <= x_end; x += x_step) {
-      // Always draw border to indicate timbre.
-      tft.fillRect(x, y, 8, 8, colourPriority[fillColour[idx]]);
-      tft.drawRect(x, y, 8, 8, colourPriority[borderColour[idx]]);
-      idx++;
-      if (idx >= global.maxVoices()) {
-        break;
-      }
     }
-      if (idx >= global.maxVoices())
-          break;
-  }
+
+
+
+//
+//  uint8_t fillColour[global.maxVoices()] = {};
+//  uint8_t borderColour[global.maxVoices()] = {};
+//  // Select colours based on voice state.
+//  uint8_t i = 0;
+//  for (uint8_t group = 0; group < groupvec.size(); group++) {
+//    for (uint8_t voice = 0; voice  < groupvec[group]->size(); voice++) {
+//      borderColour[i] = group + 1;
+//      if ((*groupvec[group])[voice]->on()) fillColour[i] = (*groupvec[group])[voice]->noteId() + 1;
+//      else fillColour[i] = 0;
+//      i++;
+//    }
+//  }
+//
+//
+//  // Draw rectangles to represent each voice.
+//  uint8_t x_step = 10;
+//  uint8_t y_step = 10;
+//  uint8_t x_end = 147;
+//  uint8_t x_start = 2;
+//  uint8_t y_start = 7;
+//  uint8_t y_end = 47;
+//  uint8_t idx = 0;
+//  for (uint8_t y = y_start; y <= y_end; y += y_step) {
+//    for (uint8_t x = x_start; x <= x_end; x += x_step) {
+//      // Always draw border to indicate timbre.
+//      tft.fillRect(x, y, 8, 8, colourPriority[fillColour[idx]]);
+//      tft.drawRect(x, y, 8, 8, colourPriority[borderColour[idx]]);
+//      idx++;
+//      if (idx >= global.maxVoices()) {
+//        break;
+//      }
+//    }
+//      if (idx >= global.maxVoices())
+//          break;
+//  }
 
   if(dbgMode != 0) {
       tft.setCursor(10, 10);

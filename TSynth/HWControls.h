@@ -14,43 +14,19 @@ ADC *adc = new ADC();
 #define MUX_0 36
 #define MUX_1 35
 #define MUX_2 33
-#define MUX_3 34
-#define MUX1_S 37
-//#define MUX2_S A17
-//Mux 1 Connections
-//#define MUX1_noiseLevel 0
-//#define MUX1_pitchLfoRate 1
-//#define MUX1_pitchLfoWaveform 2
-//#define MUX1_pitchLfoAmount 3
-//#define MUX1_detune 4
-//#define MUX1_oscMix 5
-//#define MUX1_filterAttack 6
-//#define MUX1_filterDecay 7
-//#define MUX1_pwmAmountA 8
-//#define MUX1_waveformA 9
-//#define MUX1_pitchA 10
-//#define MUX1_pwmAmountB 11
-//#define MUX1_waveformB 12
-//#define MUX1_pitchB 13
-//#define MUX1_pwmRate 14
-//#define MUX1_pitchEnv 15
-//Mux 2 Connections
-//#define MUX2_release 0
-//#define MUX2_sustain 1
-//#define MUX2_decay 2
-//#define MUX2_attack 3
-//#define MUX2_filterLFOAmount 4
-//#define MUX2_FXMix 5
-//#define MUX2_FXAmount 6
-//#define MUX2_glide 7
-//#define MUX2_filterEnv 8
-//#define MUX2_filterRelease 9
-//#define MUX2_filterSustain 10
-//#define MUX2_filterType 11
-//#define MUX2_resonance 12
-//#define MUX2_cutoff 13
-//#define MUX2_filterLFORate 14
-//#define MUX2_filterLFOWaveform 15
+#define MUX_3 38
+//#define MUX_3 36
+//#define MUX_2 35
+//#define MUX_1 33
+//#define MUX_0 34
+#define MUX1_S 34
+/*
+ * recall on sig
+ * back on s0
+ * save s1
+ * settings s3
+ * section s2
+ * */
 
 //Teensy 4.1 Pins
 //#define OSC_FX_SW 33
@@ -78,16 +54,16 @@ ADC *adc = new ADC();
 
 #define ENCODER_PINA 4
 #define ENCODER_PINB 5
-#define ENCODER1_PINA 17
-#define ENCODER1_PINB 16
-#define ENCODER2_PINA 25
-#define ENCODER2_PINB 28
-#define ENCODER3_PINA 29
-#define ENCODER3_PINB 30
-#define ENCODER4_PINA 31
-#define ENCODER4_PINB 32
+#define ENCODER4_PINB 17
+#define ENCODER4_PINA 16
+#define ENCODER3_PINB 25
+#define ENCODER3_PINA 28
+#define ENCODER2_PINB 29
+#define ENCODER2_PINA 30
+#define ENCODER1_PINB 31
+#define ENCODER1_PINA 32
 
-#define ENCODER1_LED 38
+#define ENCODER1_LED 37
 #define ENCODER2_LED 39
 #define ENCODER3_LED 40
 #define ENCODER4_LED 41
@@ -105,7 +81,7 @@ ADC *adc = new ADC();
 
 #define DEBOUNCE 30
 
-//static byte muxInput = 0;
+static byte muxInput = 0;
 //static uint16_t mux1ValuesPrev[MUXCHANNELS] = {};
 //static uint16_t mux2ValuesPrev[MUXCHANNELS] = {};
 
@@ -114,8 +90,26 @@ ADC *adc = new ADC();
 static int volumeRead = 0;
 static int volumePrevious = 0;
 
-#define SECTION_SW 37
-TButton sectionSwitch{SECTION_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
+TButton muxedButtons[16] = {
+        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
+        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
+        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
+        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
+        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
+        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
+        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
+        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
+        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
+        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
+        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
+        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
+        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
+        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
+        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
+        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION)
+};
+//#define SECTION_SW 37
+//TButton sectionSwitch{SECTION_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
 
 //These are pushbuttons and require debouncing
 //TButton oscFXSwitch{OSC_FX_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
@@ -143,10 +137,10 @@ FLASHMEM void setupHardware() {
   adc->adc0->setSamplingSpeed(ADC_SAMPLING_SPEED::MED_SPEED); // change the sampling speed
 
   //MUXs on ADC1
-  adc->adc1->setAveraging(32); // set number of averages 0, 4, 8, 16 or 32.
-  adc->adc1->setResolution(12); // set bits of resolution  8, 10, 12 or 16 bits.
-  adc->adc1->setConversionSpeed(ADC_CONVERSION_SPEED::VERY_LOW_SPEED); // change the conversion speed
-  adc->adc1->setSamplingSpeed(ADC_SAMPLING_SPEED::MED_SPEED); // change the sampling speed
+//  adc->adc1->setAveraging(32); // set number of averages 0, 4, 8, 16 or 32.
+//  adc->adc1->setResolution(12); // set bits of resolution  8, 10, 12 or 16 bits.
+//  adc->adc1->setConversionSpeed(ADC_CONVERSION_SPEED::VERY_LOW_SPEED); // change the conversion speed
+//  adc->adc1->setSamplingSpeed(ADC_SAMPLING_SPEED::MED_SPEED); // change the sampling speed
 
   //Mux address pins
   pinMode(MUX_0, OUTPUT);
@@ -155,7 +149,7 @@ FLASHMEM void setupHardware() {
   pinMode(MUX_3, OUTPUT);
 
   //Mux ADC
-  pinMode(MUX1_S, INPUT);
+  pinMode(MUX1_S, INPUT_PULLUP);
 //  pinMode(MUX2_S, INPUT);
 
   //Volume ADC

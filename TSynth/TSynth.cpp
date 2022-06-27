@@ -985,183 +985,6 @@ FLASHMEM void myMIDIClock()
   count++;
 }
 
-
-//void checkMux()
-//{
-//  mux1Read = adc->adc1->analogRead(MUX1_S);
-//  if (mux1Read > (mux1ValuesPrev[muxInput] + QUANTISE_FACTOR) || mux1Read < (mux1ValuesPrev[muxInput] - QUANTISE_FACTOR))
-//  {
-//    mux1ValuesPrev[muxInput] = mux1Read;
-//    mux1Read = (mux1Read >> 5); // Change range to 0-127
-//    switch (muxInput)
-//    {
-//    case MUX1_noiseLevel:
-//      midiCCOut(CCnoiseLevel, mux1Read);
-//      myControlChange(midiChannel, CCnoiseLevel, mux1Read);
-//      break;
-//    case MUX1_pitchLfoRate:
-//      midiCCOut(CCoscLfoRate, mux1Read);
-//      myControlChange(midiChannel, CCoscLfoRate, mux1Read);
-//      break;
-//    case MUX1_pitchLfoWaveform:
-//      midiCCOut(CCoscLfoWaveform, mux1Read);
-//      myControlChange(midiChannel, CCoscLfoWaveform, mux1Read);
-//      break;
-//    case MUX1_pitchLfoAmount:
-//      midiCCOut(CCosclfoamt, mux1Read);
-//      myControlChange(midiChannel, CCosclfoamt, mux1Read);
-//      break;
-//    case MUX1_detune:
-//      midiCCOut(CCdetune, mux1Read);
-//      myControlChange(midiChannel, CCdetune, mux1Read);
-//      break;
-//    case MUX1_oscMix:
-//      midiCCOut(CCoscLevelA, mux1Read);
-//      midiCCOut(CCoscLevelB, mux1Read);
-//      myControlChange(midiChannel, CCoscLevelA, OSCMIXA[mux1Read]);
-//      myControlChange(midiChannel, CCoscLevelB, OSCMIXB[mux1Read]);
-//      break;
-//    case MUX1_filterAttack:
-//      midiCCOut(CCfilterattack, mux1Read);
-//      myControlChange(midiChannel, CCfilterattack, mux1Read);
-//      break;
-//    case MUX1_filterDecay:
-//      midiCCOut(CCfilterdecay, mux1Read);
-//      myControlChange(midiChannel, CCfilterdecay, mux1Read);
-//      break;
-//    case MUX1_pwmAmountA:
-//      midiCCOut(CCpwA, mux1Read);
-//      myControlChange(midiChannel, CCpwA, mux1Read);
-//      break;
-//    case MUX1_waveformA:
-//      midiCCOut(CCoscwaveformA, mux1Read);
-//      myControlChange(midiChannel, CCoscwaveformA, mux1Read);
-//      break;
-//    case MUX1_pitchA:
-//      midiCCOut(CCpitchA, mux1Read);
-//      myControlChange(midiChannel, CCpitchA, mux1Read);
-//      break;
-//    case MUX1_pwmAmountB:
-//      midiCCOut(CCpwB, mux1Read);
-//      myControlChange(midiChannel, CCpwB, mux1Read);
-//      break;
-//    case MUX1_waveformB:
-//      midiCCOut(CCoscwaveformB, mux1Read);
-//      myControlChange(midiChannel, CCoscwaveformB, mux1Read);
-//      break;
-//    case MUX1_pitchB:
-//      midiCCOut(CCpitchB, mux1Read);
-//      myControlChange(midiChannel, CCpitchB, mux1Read);
-//      break;
-//    case MUX1_pwmRate:
-//      midiCCOut(CCpwmRate, mux1Read);
-//      myControlChange(midiChannel, CCpwmRate, mux1Read);
-//      break;
-//    case MUX1_pitchEnv:
-//      midiCCOut(CCpitchenv, mux1Read);
-//      myControlChange(midiChannel, CCpitchenv, mux1Read);
-//      break;
-//    }
-//  }
-//  mux2Read = adc->adc1->analogRead(MUX2_S);
-//  if (mux2Read > (mux2ValuesPrev[muxInput] + QUANTISE_FACTOR) || mux2Read < (mux2ValuesPrev[muxInput] - QUANTISE_FACTOR))
-//  {
-//    mux2ValuesPrev[muxInput] = mux2Read;
-//    if (muxInput != MUX2_cutoff)
-//      mux2Read = (mux2Read >> 5); // Change range to 0-127
-//    switch (muxInput)
-//    {
-//    case MUX2_attack:
-//      midiCCOut(CCampattack, mux2Read);
-//      myControlChange(midiChannel, CCampattack, mux2Read);
-//      break;
-//    case MUX2_decay:
-//      midiCCOut(CCampdecay, mux2Read);
-//      myControlChange(midiChannel, CCampdecay, mux2Read);
-//      break;
-//    case MUX2_sustain:
-//      midiCCOut(CCampsustain, mux2Read);
-//      myControlChange(midiChannel, CCampsustain, mux2Read);
-//      break;
-//    case MUX2_release:
-//      midiCCOut(CCamprelease, mux2Read);
-//      myControlChange(midiChannel, CCamprelease, mux2Read);
-//      break;
-//    case MUX2_filterLFOAmount:
-//      midiCCOut(CCfilterlfoamt, mux2Read);
-//      myControlChange(midiChannel, CCfilterlfoamt, mux2Read);
-//      break;
-//    case MUX2_FXMix:
-//      midiCCOut(CCfxmix, mux2Read);
-//      myControlChange(midiChannel, CCfxmix, mux2Read);
-//      break;
-//    case MUX2_FXAmount:
-//      midiCCOut(CCfxamt, mux2Read);
-//      myControlChange(midiChannel, CCfxamt, mux2Read);
-//      break;
-//    case MUX2_glide:
-//      midiCCOut(CCglide, mux2Read);
-//      myControlChange(midiChannel, CCglide, mux2Read);
-//      break;
-//    case MUX2_filterEnv:
-//      midiCCOut(CCfilterenv, mux2Read);
-//      myControlChange(midiChannel, CCfilterenv, mux2Read);
-//      break;
-//    case MUX2_filterRelease:
-//      midiCCOut(CCfilterrelease, mux2Read);
-//      myControlChange(midiChannel, CCfilterrelease, mux2Read);
-//      break;
-//    case MUX2_filterSustain:
-//      midiCCOut(CCfiltersustain, mux2Read);
-//      myControlChange(midiChannel, CCfiltersustain, mux2Read);
-//      break;
-//    case MUX2_filterType:
-//      midiCCOut(CCfiltermixer, mux2Read);
-//      myControlChange(midiChannel, CCfiltermixer, mux2Read);
-//      break;
-//    case MUX2_resonance:
-//      midiCCOut(CCfilterres, mux2Read);
-//      myControlChange(midiChannel, CCfilterres, mux2Read);
-//      break;
-//    case MUX2_cutoff:
-//      // Special case - Filter Cutoff is 8 bit, 256 values for smoother changes
-//      mux2Read = (mux2Read >> 4);
-//      if (!pickUpActive && pickUp && (filterfreqPrevValue < FILTERFREQS256[mux2Read - TOLERANCE] || filterfreqPrevValue > FILTERFREQS256[mux2Read + TOLERANCE]))
-//        return; // PICK-UP
-//
-//      updateFilterFreq(FILTERFREQS256[mux2Read]);
-//      filterfreqPrevValue = FILTERFREQS256[mux2Read]; // PICK-UP
-//      midiCCOut(CCfilterfreq, mux2Read >> 1);
-//      break;
-//    case MUX2_filterLFORate:
-//      midiCCOut(CCfilterlforate, mux2Read);
-//      myControlChange(midiChannel, CCfilterlforate, mux2Read);
-//      break;
-//    case MUX2_filterLFOWaveform:
-//      midiCCOut(CCfilterlfowaveform, mux2Read);
-//      myControlChange(midiChannel, CCfilterlfowaveform, mux2Read);
-//      break;
-//    }
-//  }
-//  muxInput++;
-//  if (muxInput >= MUXCHANNELS)
-//  {
-//    muxInput = 0;
-//    checkVolumePot(); // Check here
-//    if (!firstPatchLoaded)
-//    {
-//      recallPatch(patchNo); // Load first patch after all controls read
-//      firstPatchLoaded = true;
-//      global.sgtl5000_1.unmuteHeadphone();
-//      global.sgtl5000_1.unmuteLineout();
-//    }
-//  }
-//  digitalWriteFast(MUX_0, muxInput & B0001);
-//  digitalWriteFast(MUX_1, muxInput & B0010);
-//  digitalWriteFast(MUX_2, muxInput & B0100);
-//  digitalWriteFast(MUX_3, muxInput & B1000);
-//}
-
 void checkVolumePot()
 {
   volumeRead = adc->adc0->analogRead(VOLUME_POT);
@@ -1180,12 +1003,12 @@ void showSettingsPage()
 
 void checkSwitches()
 {
-    sectionSwitch.update();
-    if (sectionSwitch.numClicks() == 2) {
-        prevSection();
-    } else if (sectionSwitch.numClicks() == 1) {
-        nextSection();
-    }
+//    sectionSwitch.update();
+//    if (sectionSwitch.numClicks() == 2) {
+//        prevSection();
+//    } else if (sectionSwitch.numClicks() == 1) {
+//        nextSection();
+//    }
 
 }
 //void checkSwitches()
@@ -1874,6 +1697,43 @@ FLASHMEM void myProgramChange(byte channel, byte program)
     state = PARAMETER;
 }
 
+
+void checkMux()
+{
+
+    pinMode(MUX1_S, INPUT);
+    buttonStates[muxInput] = digitalReadFast(MUX1_S);// adc->adc1->analogRead(MUX1_S);
+//    uint8_t pressed = digitalReadFast(MUX1_S);
+//    Serial.print(muxInput);
+//    Serial.print(' ');
+//    Serial.println(pressed);
+    muxedButtons[muxInput].update();
+    auto& b = muxedButtons[muxInput];
+    switch (muxInput)
+    {
+        case MUX1_RECALL_SW: if(b.numClicks() == 1) nextSection(); break;
+        case MUX1_ENCODER2_SW: if(b.numClicks() == 1) nextSection(); break;
+        default:break;
+    }
+    muxInput++;
+    if (muxInput >= MUXCHANNELS)
+    {
+        muxInput = 0;
+        checkVolumePot(); // Check here
+        if (!firstPatchLoaded)
+        {
+            recallPatch(patchNo); // Load first patch after all controls read
+            firstPatchLoaded = true;
+            global.sgtl5000_1.unmuteHeadphone();
+            global.sgtl5000_1.unmuteLineout();
+        }
+    }
+    digitalWriteFast(MUX_0, muxInput & B0001);
+    digitalWriteFast(MUX_1, muxInput & B0010);
+    digitalWriteFast(MUX_2, muxInput & B0100);
+    digitalWriteFast(MUX_3, muxInput & B1000);
+}
+
 void checkEncoder()
 {
   // Encoder works with relative inc and dec values
@@ -1892,21 +1752,21 @@ void checkEncoder()
 //    }
   int8_t delta = encoder.getDelta();
 
-    if(sectionSwitch.numClicks() == 3) {
-        if(dbgMode == 0)
-            dbgMode = 1;
-        else
-            dbgMode = 0;
-    }
-    if(dbgMode != 0) {
-        if(sectionSwitch.numClicks() == 1)
-            dbgMode = dbgMode == 1 ? 2 : 1;
-        if(dbgMode == 1)
-            dbgX += delta;
-        else
-            dbgY += delta;
-        return;
-    }
+//    if(sectionSwitch.numClicks() == 3) {
+//        if(dbgMode == 0)
+//            dbgMode = 1;
+//        else
+//            dbgMode = 0;
+//    }
+//    if(dbgMode != 0) {
+//        if(sectionSwitch.numClicks() == 1)
+//            dbgMode = dbgMode == 1 ? 2 : 1;
+//        if(dbgMode == 1)
+//            dbgX += delta;
+//        else
+//            dbgY += delta;
+//        return;
+//    }
   if (delta > 0)
   {
 
@@ -2034,6 +1894,9 @@ FLASHMEM void setup()
     global.sgtl5000_1.enhanceBassDisable();          // Turned on from EEPROM
     global.sgtl5000_1.adcHighPassFilterDisable();
 
+//    Serial.begin(9600);
+//    while(!Serial);
+
     cardStatus = SD.begin(BUILTIN_SDCARD);
     if (cardStatus)
     {
@@ -2131,16 +1994,16 @@ void loop()
   usbMIDI.read();
   // MIDI 5 Pin DIN
   MIDI.read();
-  // checkMux();
+   checkMux();
 
     checkVolumePot(); // Check here
-    if (!firstPatchLoaded)
-    {
-      recallPatch(patchNo); // Load first patch after all controls read
-      firstPatchLoaded = true;
-      global.sgtl5000_1.unmuteHeadphone();
-      global.sgtl5000_1.unmuteLineout();
-    }
+//    if (!firstPatchLoaded)
+//    {
+//      recallPatch(patchNo); // Load first patch after all controls read
+//      firstPatchLoaded = true;
+//      global.sgtl5000_1.unmuteHeadphone();
+//      global.sgtl5000_1.unmuteLineout();
+//    }
    checkSwitches();
   checkEncoder();
   // CPUMonitor();
