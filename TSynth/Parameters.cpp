@@ -44,4 +44,4 @@ float fxMixPrevValue = 0.0f;//Need to set these when patch loaded
 int dbgMode = 0;
 uint8_t dbgX = 108;
 uint8_t dbgY = 0;
-uint8_t buttonStates[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+//uint8_t buttonStates[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};

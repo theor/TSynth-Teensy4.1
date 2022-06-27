@@ -14,26 +14,9 @@ ADC *adc = new ADC();
 #define MUX_0 36
 #define MUX_1 35
 #define MUX_2 33
-#define MUX_3 38
-//#define MUX_3 36
-//#define MUX_2 35
-//#define MUX_1 33
-//#define MUX_0 34
-#define MUX1_S 34
-/*
- * recall on sig
- * back on s0
- * save s1
- * settings s3
- * section s2
- * */
-
-//Teensy 4.1 Pins
-//#define OSC_FX_SW 33
-//#define FILTER_LFO_RETRIG_SW 39
-//#define UNISON_SW 36
-//#define TEMPO_SW 16
-
+#define MUX_3 34
+#define MUX1_S 37
+#define MUXCHANNELS 16
 #define MUX1_RECALL_SW 4
 #define MUX1_ENCODER1_SW 0
 #define MUX1_ENCODER2_SW 1
@@ -63,7 +46,7 @@ ADC *adc = new ADC();
 #define ENCODER1_PINB 31
 #define ENCODER1_PINA 32
 
-#define ENCODER1_LED 37
+#define ENCODER1_LED 38
 #define ENCODER2_LED 39
 #define ENCODER3_LED 40
 #define ENCODER4_LED 41
@@ -75,7 +58,6 @@ ADC *adc = new ADC();
 
 #define BACKLIGHT 6
 
-#define MUXCHANNELS 16
 #define QUANTISE_FACTOR 15// Sets a tolerance of noise on the ADC. 15 is 4 bits
 #define QUANTISE_FACTOR_VOL 511// Sets a tolerance of noise on the ADC. 15 is 4 bits
 
@@ -90,37 +72,23 @@ static byte muxInput = 0;
 static int volumeRead = 0;
 static int volumePrevious = 0;
 
-TButton muxedButtons[16] = {
-        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
-        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
-        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
-        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
-        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
-        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
-        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
-        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
-        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
-        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
-        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
-        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
-        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
-        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
-        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION),
-        TButton(MUX1_S, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION)
-};
-//#define SECTION_SW 37
-//TButton sectionSwitch{SECTION_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
-
-//These are pushbuttons and require debouncing
-//TButton oscFXSwitch{OSC_FX_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
-//TButton filterLFORetrigSwitch{FILTER_LFO_RETRIG_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
-//TButton unisonSwitch{UNISON_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
-//TButton tempoSwitch{TEMPO_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
-//TButton recallButton{RECALL_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION}; //On encoder
-//
-//TButton saveButton{SAVE_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
-//TButton settingsButton{SETTINGS_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
-//TButton backButton{BACK_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
+/*
+ * recall on sig
+ * back on s0
+ * save s1
+ * settings s3
+ * section s2
+ * */
+#define RECALL_SW MUX1_S
+#define BACK_SW MUX_0
+#define SAVE_SW MUX_1
+#define SETTINGS_SW MUX_3
+#define SECTION_SW MUX_2
+TButton sectionSwitch{SECTION_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
+TButton recallButton{RECALL_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION}; //On encoder
+TButton saveButton{SAVE_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
+TButton settingsButton{SETTINGS_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
+TButton backButton{BACK_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
 TEncoder encoder(ENCODER_PINB, ENCODER_PINA);//This often needs the pins swapping depending on the encoder
 TEncoder sectionEncoders[4] = {
         TEncoder(ENCODER1_PINB, ENCODER1_PINA),
@@ -143,10 +111,10 @@ FLASHMEM void setupHardware() {
 //  adc->adc1->setSamplingSpeed(ADC_SAMPLING_SPEED::MED_SPEED); // change the sampling speed
 
   //Mux address pins
-  pinMode(MUX_0, OUTPUT);
-  pinMode(MUX_1, OUTPUT);
-  pinMode(MUX_2, OUTPUT);
-  pinMode(MUX_3, OUTPUT);
+  pinMode(MUX_0, INPUT_PULLUP);
+  pinMode(MUX_1, INPUT_PULLUP);
+  pinMode(MUX_2, INPUT_PULLUP);
+  pinMode(MUX_3, INPUT_PULLUP);
 
   //Mux ADC
   pinMode(MUX1_S, INPUT_PULLUP);

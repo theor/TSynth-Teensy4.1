@@ -1001,252 +1001,29 @@ void showSettingsPage()
   showSettingsPage(settings::current_setting(), settings::current_setting_value(), state);
 }
 
-void checkSwitches()
+FLASHMEM String getCurrentPatchData()
 {
-//    sectionSwitch.update();
-//    if (sectionSwitch.numClicks() == 2) {
-//        prevSection();
-//    } else if (sectionSwitch.numClicks() == 1) {
-//        nextSection();
-//    }
-
+    auto p = groupvec[activeGroupIndex]->params();
+    return patchName + F(",") + String(groupvec[activeGroupIndex]->getOscLevelA()) + F(",") + String(groupvec[activeGroupIndex]->getOscLevelB()) + F(",") + String(groupvec[activeGroupIndex]->getPinkNoiseLevel() - groupvec[activeGroupIndex]->getWhiteNoiseLevel()) + F(",") + String(p.unisonMode) + F(",") + String(groupvec[activeGroupIndex]->getOscFX()) + F(",") + String(p.detune, 5) + F(",") + String(lfoSyncFreq) + F(",") + String(midiClkTimeInterval) + F(",") + String(lfoTempoValue) + F(",") + String(groupvec[activeGroupIndex]->getKeytrackingAmount()) + F(",") + String(p.glideSpeed, 5) + F(",") + String(p.oscPitchA) + F(",") + String(p.oscPitchB) + F(",") + String(groupvec[activeGroupIndex]->getWaveformA()) + F(",") + String(groupvec[activeGroupIndex]->getWaveformB()) + F(",") +
+           String(groupvec[activeGroupIndex]->getPwmSource()) + F(",") + String(groupvec[activeGroupIndex]->getPwmAmtA()) + F(",") + String(groupvec[activeGroupIndex]->getPwmAmtB()) + F(",") + String(groupvec[activeGroupIndex]->getPwmRate()) + F(",") + String(groupvec[activeGroupIndex]->getPwA()) + F(",") + String(groupvec[activeGroupIndex]->getPwB()) + F(",") + String(groupvec[activeGroupIndex]->getResonance()) + F(",") + String(groupvec[activeGroupIndex]->getCutoff()) + F(",") + String(groupvec[activeGroupIndex]->getFilterMixer()) + F(",") + String(groupvec[activeGroupIndex]->getFilterEnvelope()) + F(",") + String(groupvec[activeGroupIndex]->getPitchLfoAmount(), 5) + F(",") + String(groupvec[activeGroupIndex]->getPitchLfoRate(), 5) + F(",") + String(groupvec[activeGroupIndex]->getPitchLfoWaveform()) + F(",") + String(int(groupvec[activeGroupIndex]->getPitchLfoRetrig())) + F(",") + String(int(groupvec[activeGroupIndex]->getPitchLfoMidiClockSync())) + F(",") + String(groupvec[activeGroupIndex]->getFilterLfoRate(), 5) + F(",") +
+           groupvec[activeGroupIndex]->getFilterLfoRetrig() + F(",") + groupvec[activeGroupIndex]->getFilterLfoMidiClockSync() + F(",") + groupvec[activeGroupIndex]->getFilterLfoAmt() + F(",") + groupvec[activeGroupIndex]->getFilterLfoWaveform() + F(",") + groupvec[activeGroupIndex]->getFilterAttack() + F(",") + groupvec[activeGroupIndex]->getFilterDecay() + F(",") + groupvec[activeGroupIndex]->getFilterSustain() + F(",") + groupvec[activeGroupIndex]->getFilterRelease() + F(",") + groupvec[activeGroupIndex]->getAmpAttack() + F(",") + groupvec[activeGroupIndex]->getAmpDecay() + F(",") + groupvec[activeGroupIndex]->getAmpSustain() + F(",") + groupvec[activeGroupIndex]->getAmpRelease() + F(",") +
+           String(groupvec[activeGroupIndex]->getEffectAmount()) + F(",") + String(groupvec[activeGroupIndex]->getEffectMix()) + F(",") + String(groupvec[activeGroupIndex]->getPitchEnvelope()) + F(",") + String(velocitySens) + F(",") + String(p.chordDetune) + F(",") + String(groupvec[activeGroupIndex]->getMonophonicMode()) + F(",") + String(0.0f) + F(",") + String(0.0f);
 }
-//void checkSwitches()
-//{
-//  unisonSwitch.update();
-//  if (unisonSwitch.numClicks() == 1)
-//  {
-//    // Cycle through each option
-//    midiCCOut(CCunison, groupvec[activeGroupIndex]->params().unisonMode == 2 ? 0 : groupvec[activeGroupIndex]->params().unisonMode + 1);
-//    myControlChange(midiChannel, CCunison, groupvec[activeGroupIndex]->params().unisonMode == 2 ? 0 : groupvec[activeGroupIndex]->params().unisonMode + 1);
-//  }
-//
-//  oscFXSwitch.update();
-//  if (oscFXSwitch.numClicks() == 1)
-//  {
-//    // Cycle through each option
-//    midiCCOut(CCoscfx, groupvec[activeGroupIndex]->getOscFX() == 2 ? 0 : groupvec[activeGroupIndex]->getOscFX() + 1);
-//    myControlChange(midiChannel, CCoscfx, groupvec[activeGroupIndex]->getOscFX() == 2 ? 0 : groupvec[activeGroupIndex]->getOscFX() + 1);
-//  }
-//
-//  filterLFORetrigSwitch.update();
-//  if (filterLFORetrigSwitch.numClicks() == 1)
-//  {
-//    bool value = !groupvec[activeGroupIndex]->getFilterLfoRetrig();
-//    midiCCOut(CCfilterlforetrig, value);
-//    myControlChange(midiChannel, CCfilterlforetrig, value);
-//  }
-//
-//  tempoSwitch.update();
-//  if (tempoSwitch.numClicks() == 1)
-//  {
-//    bool value = !groupvec[activeGroupIndex]->getFilterLfoMidiClockSync();
-//    midiCCOut(CCfilterLFOMidiClkSync, value);
-//    myControlChange(midiChannel, CCfilterLFOMidiClkSync, value);
-//  }
-//
-//  saveButton.update();
-//  if (saveButton.held())
-//  {
-//    switch (state)
-//    {
-//    case PARAMETER:
-//    case PATCH:
-//      state = DELETE;
-//      break;
-//    }
-//  }
-//  else if (saveButton.numClicks() == 1)
-//  {
-//    switch (state)
-//    {
-//    case PARAMETER:
-//      if (patches.size() < PATCHES_LIMIT)
-//      {
-//        resetPatchesOrdering(); // Reset order of patches from first patch
-//        patches.push({patches.size() + 1, INITPATCHNAME});
-//        state = SAVE;
-//      }
-//      break;
-//    case SAVE:
-//      // Save as new patch with INITIALPATCH name or overwrite existing keeping name - bypassing patch renaming
-//      patchName = patches.last().patchName;
-//      state = PATCH;
-//      savePatch(String(patches.last().patchNo).c_str(), getCurrentPatchData());
-//      showPatchPage(patches.last().patchNo, patches.last().patchName);
-//      patchNo = patches.last().patchNo;
-//      loadPatches(); // Get rid of pushed patch if it wasn't saved
-//      setPatchesOrdering(patchNo);
-//      renamedPatch = "";
-//      state = PARAMETER;
-//      break;
-//    case PATCHNAMING:
-//      if (renamedPatch.length() > 0)
-//        patchName = renamedPatch; // Prevent empty strings
-//      state = PATCH;
-//      savePatch(String(patches.last().patchNo).c_str(), getCurrentPatchData());
-//      showPatchPage(patches.last().patchNo, patchName);
-//      patchNo = patches.last().patchNo;
-//      loadPatches(); // Get rid of pushed patch if it wasn't saved
-//      setPatchesOrdering(patchNo);
-//      renamedPatch = "";
-//      state = PARAMETER;
-//      break;
-//    }
-//  }
-//
-//  settingsButton.update();
-//  if (settingsButton.held())
-//  {
-//    // If recall held, set current patch to match current hardware state
-//    // Reinitialise all hardware values to force them to be re-read if different
-//    state = REINITIALISE;
-//    reinitialiseToPanel();
-//  }
-//  else if (settingsButton.numClicks() == 1)
-//  {
-//    switch (state)
-//    {
-//    case PARAMETER:
-//      state = SETTINGS;
-//      showSettingsPage();
-//      break;
-//    case SETTINGS:
-//      showSettingsPage();
-//    case SETTINGSVALUE:
-//      settings::save_current_value();
-//      state = SETTINGS;
-//      showSettingsPage();
-//      break;
-//    }
-//  }
-//
-//  backButton.update();
-//  if (backButton.held())
-//  {
-//    // If Back button held, Panic - all notes off
-//    groupvec[activeGroupIndex]->allNotesOff();
-//    groupvec[activeGroupIndex]->closeEnvelopes();
-//  }
-//  else if (backButton.numClicks() == 1)
-//  {
-//    switch (state)
-//    {
-//    case RECALL:
-//      setPatchesOrdering(patchNo);
-//      state = PARAMETER;
-//      break;
-//    case SAVE:
-//      renamedPatch = "";
-//      state = PARAMETER;
-//      loadPatches(); // Remove patch that was to be saved
-//      setPatchesOrdering(patchNo);
-//      break;
-//    case PATCHNAMING:
-//      charIndex = 0;
-//      renamedPatch = "";
-//      state = SAVE;
-//      break;
-//    case DELETE:
-//      setPatchesOrdering(patchNo);
-//      state = PARAMETER;
-//      break;
-//    case SETTINGS:
-//      state = PARAMETER;
-//      break;
-//    case SETTINGSVALUE:
-//      state = SETTINGS;
-//      showSettingsPage();
-//      break;
-//    }
-//  }
-//
-//  // Encoder switch
-//  recallButton.update();
-//  if (recallButton.held())
-//  {
-//    // If Recall button held, return to current patch setting
-//    // which clears any changes made
-//    state = PATCH;
-//    // Recall the current patch
-//    patchNo = patches.first().patchNo;
-//    recallPatch(patchNo);
-//    state = PARAMETER;
-//  }
-//  else if (recallButton.numClicks() == 1)
-//  {
-//    switch (state)
-//    {
-//    case PARAMETER:
-//      state = RECALL; // show patch list
-//      break;
-//    case RECALL:
-//      state = PATCH;
-//      // Recall the current patch
-//      patchNo = patches.first().patchNo;
-//      recallPatch(patchNo);
-//      state = PARAMETER;
-//      break;
-//    case SAVE:
-//      showRenamingPage(patches.last().patchName);
-//      patchName = patches.last().patchName;
-//      state = PATCHNAMING;
-//      break;
-//    case PATCHNAMING:
-//      if (renamedPatch.length() < 12) // actually 12 chars
-//      {
-//        renamedPatch.concat(String(currentCharacter));
-//        charIndex = 0;
-//        currentCharacter = CHARACTERS[charIndex];
-//        showRenamingPage(renamedPatch);
-//      }
-//      break;
-//    case DELETE:
-//      // Don't delete final patch
-//      if (patches.size() > 1)
-//      {
-//        state = DELETEMSG;
-//        patchNo = patches.first().patchNo;    // PatchNo to delete from SD card
-//        patches.shift();                      // Remove patch from circular buffer
-//        deletePatch(String(patchNo).c_str()); // Delete from SD card
-//        loadPatches();                        // Repopulate circular buffer to start from lowest Patch No
-//        renumberPatchesOnSD();
-//        loadPatches();                     // Repopulate circular buffer again after delete
-//        patchNo = patches.first().patchNo; // Go back to 1
-//        recallPatch(patchNo);              // Load first patch
-//      }
-//      state = PARAMETER;
-//      break;
-//    case SETTINGS:
-//      state = SETTINGSVALUE;
-//      showSettingsPage();
-//      break;
-//    case SETTINGSVALUE:
-//      settings::save_current_value();
-//      state = SETTINGS;
-//      showSettingsPage();
-//      break;
-//    }
-//  }
-//}
 
 FLASHMEM void reinitialiseToPanel()
 {
-  // This sets the current patch to be the same as the current hardware panel state - all the pots
-  // The four button controls stay the same state
-  // This reinialises the previous hardware values to force a re-read
+    // This sets the current patch to be the same as the current hardware panel state - all the pots
+    // The four button controls stay the same state
+    // This reinialises the previous hardware values to force a re-read
 //  muxInput = 0;
 //  for (int i = 0; i < MUXCHANNELS; i++)
 //  {
 //    mux1ValuesPrev[i] = RE_READ;
 //    mux2ValuesPrev[i] = RE_READ;
 //  }
-  volumePrevious = RE_READ;
-  patchName = INITPATCHNAME;
+    volumePrevious = RE_READ;
+    patchName = INITPATCHNAME;
 }
-
-
-
 FLASHMEM void setCurrentPatchData(String data[])
 {
     updatePatch(data[0], patchNo);
@@ -1313,15 +1090,212 @@ FLASHMEM void setCurrentPatchData(String data[])
     Serial.println(data[0]);
 }
 
-FLASHMEM String getCurrentPatchData()
+
+FLASHMEM void recallPatch(int patchNo)
 {
-    auto p = groupvec[activeGroupIndex]->params();
-    return patchName + F(",") + String(groupvec[activeGroupIndex]->getOscLevelA()) + F(",") + String(groupvec[activeGroupIndex]->getOscLevelB()) + F(",") + String(groupvec[activeGroupIndex]->getPinkNoiseLevel() - groupvec[activeGroupIndex]->getWhiteNoiseLevel()) + F(",") + String(p.unisonMode) + F(",") + String(groupvec[activeGroupIndex]->getOscFX()) + F(",") + String(p.detune, 5) + F(",") + String(lfoSyncFreq) + F(",") + String(midiClkTimeInterval) + F(",") + String(lfoTempoValue) + F(",") + String(groupvec[activeGroupIndex]->getKeytrackingAmount()) + F(",") + String(p.glideSpeed, 5) + F(",") + String(p.oscPitchA) + F(",") + String(p.oscPitchB) + F(",") + String(groupvec[activeGroupIndex]->getWaveformA()) + F(",") + String(groupvec[activeGroupIndex]->getWaveformB()) + F(",") +
-           String(groupvec[activeGroupIndex]->getPwmSource()) + F(",") + String(groupvec[activeGroupIndex]->getPwmAmtA()) + F(",") + String(groupvec[activeGroupIndex]->getPwmAmtB()) + F(",") + String(groupvec[activeGroupIndex]->getPwmRate()) + F(",") + String(groupvec[activeGroupIndex]->getPwA()) + F(",") + String(groupvec[activeGroupIndex]->getPwB()) + F(",") + String(groupvec[activeGroupIndex]->getResonance()) + F(",") + String(groupvec[activeGroupIndex]->getCutoff()) + F(",") + String(groupvec[activeGroupIndex]->getFilterMixer()) + F(",") + String(groupvec[activeGroupIndex]->getFilterEnvelope()) + F(",") + String(groupvec[activeGroupIndex]->getPitchLfoAmount(), 5) + F(",") + String(groupvec[activeGroupIndex]->getPitchLfoRate(), 5) + F(",") + String(groupvec[activeGroupIndex]->getPitchLfoWaveform()) + F(",") + String(int(groupvec[activeGroupIndex]->getPitchLfoRetrig())) + F(",") + String(int(groupvec[activeGroupIndex]->getPitchLfoMidiClockSync())) + F(",") + String(groupvec[activeGroupIndex]->getFilterLfoRate(), 5) + F(",") +
-           groupvec[activeGroupIndex]->getFilterLfoRetrig() + F(",") + groupvec[activeGroupIndex]->getFilterLfoMidiClockSync() + F(",") + groupvec[activeGroupIndex]->getFilterLfoAmt() + F(",") + groupvec[activeGroupIndex]->getFilterLfoWaveform() + F(",") + groupvec[activeGroupIndex]->getFilterAttack() + F(",") + groupvec[activeGroupIndex]->getFilterDecay() + F(",") + groupvec[activeGroupIndex]->getFilterSustain() + F(",") + groupvec[activeGroupIndex]->getFilterRelease() + F(",") + groupvec[activeGroupIndex]->getAmpAttack() + F(",") + groupvec[activeGroupIndex]->getAmpDecay() + F(",") + groupvec[activeGroupIndex]->getAmpSustain() + F(",") + groupvec[activeGroupIndex]->getAmpRelease() + F(",") +
-           String(groupvec[activeGroupIndex]->getEffectAmount()) + F(",") + String(groupvec[activeGroupIndex]->getEffectMix()) + F(",") + String(groupvec[activeGroupIndex]->getPitchEnvelope()) + F(",") + String(velocitySens) + F(",") + String(p.chordDetune) + F(",") + String(groupvec[activeGroupIndex]->getMonophonicMode()) + F(",") + String(0.0f) + F(",") + String(0.0f);
+    groupvec[activeGroupIndex]->allNotesOff();
+    groupvec[activeGroupIndex]->closeEnvelopes();
+    File patchFile = SD.open(String(patchNo).c_str());
+    if (!patchFile)
+    {
+        Serial.println(F("File not found"));
+    }
+    else
+    {
+        String data[NO_OF_PARAMS]; // Array of data read in
+        recallPatchData(patchFile, data);
+        setCurrentPatchData(data);
+        patchFile.close();
+    }
 }
 
+void checkSwitches()
+{
+    sectionSwitch.update();
+  saveButton.update();
+  if (saveButton.held())
+  {
+    switch (state)
+    {
+    case PARAMETER:
+    case PATCH:
+      state = DELETE;
+      break;
+    }
+  }
+  else if (saveButton.numClicks() == 1)
+  {
+    switch (state)
+    {
+    case PARAMETER:
+      if (patches.size() < PATCHES_LIMIT)
+      {
+        resetPatchesOrdering(); // Reset order of patches from first patch
+        patches.push({patches.size() + 1, INITPATCHNAME});
+        state = SAVE;
+      }
+      break;
+    case SAVE:
+      // Save as new patch with INITIALPATCH name or overwrite existing keeping name - bypassing patch renaming
+      patchName = patches.last().patchName;
+      state = PATCH;
+      savePatch(String(patches.last().patchNo).c_str(), getCurrentPatchData());
+      showPatchPage(patches.last().patchNo, patches.last().patchName);
+      patchNo = patches.last().patchNo;
+      loadPatches(); // Get rid of pushed patch if it wasn't saved
+      setPatchesOrdering(patchNo);
+      renamedPatch = "";
+      state = PARAMETER;
+      break;
+    case PATCHNAMING:
+      if (renamedPatch.length() > 0)
+        patchName = renamedPatch; // Prevent empty strings
+      state = PATCH;
+      savePatch(String(patches.last().patchNo).c_str(), getCurrentPatchData());
+      showPatchPage(patches.last().patchNo, patchName);
+      patchNo = patches.last().patchNo;
+      loadPatches(); // Get rid of pushed patch if it wasn't saved
+      setPatchesOrdering(patchNo);
+      renamedPatch = "";
+      state = PARAMETER;
+      break;
+    }
+  }
+
+  settingsButton.update();
+  if (settingsButton.held())
+  {
+    // If recall held, set current patch to match current hardware state
+    // Reinitialise all hardware values to force them to be re-read if different
+    state = REINITIALISE;
+    reinitialiseToPanel();
+  }
+  else if (settingsButton.numClicks() == 1)
+  {
+    switch (state)
+    {
+    case PARAMETER:
+      state = SETTINGS;
+      showSettingsPage();
+      break;
+    case SETTINGS:
+      showSettingsPage();
+    case SETTINGSVALUE:
+      settings::save_current_value();
+      state = SETTINGS;
+      showSettingsPage();
+      break;
+    }
+  }
+
+  backButton.update();
+  if (backButton.held())
+  {
+    // If Back button held, Panic - all notes off
+    groupvec[activeGroupIndex]->allNotesOff();
+    groupvec[activeGroupIndex]->closeEnvelopes();
+  }
+  else if (backButton.numClicks() == 1)
+  {
+    switch (state)
+    {
+    case RECALL:
+      setPatchesOrdering(patchNo);
+      state = PARAMETER;
+      break;
+    case SAVE:
+      renamedPatch = "";
+      state = PARAMETER;
+      loadPatches(); // Remove patch that was to be saved
+      setPatchesOrdering(patchNo);
+      break;
+    case PATCHNAMING:
+      charIndex = 0;
+      renamedPatch = "";
+      state = SAVE;
+      break;
+    case DELETE:
+      setPatchesOrdering(patchNo);
+      state = PARAMETER;
+      break;
+    case SETTINGS:
+      state = PARAMETER;
+      break;
+    case SETTINGSVALUE:
+      state = SETTINGS;
+      showSettingsPage();
+      break;
+    }
+  }
+
+  // Encoder switch
+  recallButton.update();
+  if (recallButton.held())
+  {
+    // If Recall button held, return to current patch setting
+    // which clears any changes made
+    state = PATCH;
+    // Recall the current patch
+    patchNo = patches.first().patchNo;
+    recallPatch(patchNo);
+    state = PARAMETER;
+  }
+  else if (recallButton.numClicks() == 1)
+  {
+    switch (state)
+    {
+    case PARAMETER:
+      state = RECALL; // show patch list
+      break;
+    case RECALL:
+      state = PATCH;
+      // Recall the current patch
+      patchNo = patches.first().patchNo;
+      recallPatch(patchNo);
+      state = PARAMETER;
+      break;
+    case SAVE:
+      showRenamingPage(patches.last().patchName);
+      patchName = patches.last().patchName;
+      state = PATCHNAMING;
+      break;
+    case PATCHNAMING:
+      if (renamedPatch.length() < 12) // actually 12 chars
+      {
+        renamedPatch.concat(String(currentCharacter));
+        charIndex = 0;
+        currentCharacter = CHARACTERS[charIndex];
+        showRenamingPage(renamedPatch);
+      }
+      break;
+    case DELETE:
+      // Don't delete final patch
+      if (patches.size() > 1)
+      {
+        state = DELETEMSG;
+        patchNo = patches.first().patchNo;    // PatchNo to delete from SD card
+        patches.shift();                      // Remove patch from circular buffer
+        deletePatch(String(patchNo).c_str()); // Delete from SD card
+        loadPatches();                        // Repopulate circular buffer to start from lowest Patch No
+        renumberPatchesOnSD();
+        loadPatches();                     // Repopulate circular buffer again after delete
+        patchNo = patches.first().patchNo; // Go back to 1
+        recallPatch(patchNo);              // Load first patch
+      }
+      state = PARAMETER;
+      break;
+    case SETTINGS:
+      state = SETTINGSVALUE;
+      showSettingsPage();
+      break;
+    case SETTINGSVALUE:
+      settings::save_current_value();
+      state = SETTINGS;
+      showSettingsPage();
+      break;
+    }
+  }
+}
 
 uint8_t fromMix(float mixA, float mixB)
 {
@@ -1669,24 +1643,6 @@ void updateSection(byte encIndex, bool moveUp) {
     showPatchPage(String(F("ERROR")) + String(encIndex), String((int)section));
 }
 
-FLASHMEM void recallPatch(int patchNo)
-{
-    groupvec[activeGroupIndex]->allNotesOff();
-    groupvec[activeGroupIndex]->closeEnvelopes();
-    File patchFile = SD.open(String(patchNo).c_str());
-    if (!patchFile)
-    {
-        Serial.println(F("File not found"));
-    }
-    else
-    {
-        String data[NO_OF_PARAMS]; // Array of data read in
-        recallPatchData(patchFile, data);
-        setCurrentPatchData(data);
-        patchFile.close();
-    }
-}
-
 FLASHMEM void myProgramChange(byte channel, byte program)
 {
     state = PATCH;
@@ -1700,21 +1656,6 @@ FLASHMEM void myProgramChange(byte channel, byte program)
 
 void checkMux()
 {
-
-    pinMode(MUX1_S, INPUT);
-    buttonStates[muxInput] = digitalReadFast(MUX1_S);// adc->adc1->analogRead(MUX1_S);
-//    uint8_t pressed = digitalReadFast(MUX1_S);
-//    Serial.print(muxInput);
-//    Serial.print(' ');
-//    Serial.println(pressed);
-    muxedButtons[muxInput].update();
-    auto& b = muxedButtons[muxInput];
-    switch (muxInput)
-    {
-        case MUX1_RECALL_SW: if(b.numClicks() == 1) nextSection(); break;
-        case MUX1_ENCODER2_SW: if(b.numClicks() == 1) nextSection(); break;
-        default:break;
-    }
     muxInput++;
     if (muxInput >= MUXCHANNELS)
     {
@@ -1728,10 +1669,6 @@ void checkMux()
             global.sgtl5000_1.unmuteLineout();
         }
     }
-    digitalWriteFast(MUX_0, muxInput & B0001);
-    digitalWriteFast(MUX_1, muxInput & B0010);
-    digitalWriteFast(MUX_2, muxInput & B0100);
-    digitalWriteFast(MUX_3, muxInput & B1000);
 }
 
 void checkEncoder()
@@ -1752,24 +1689,28 @@ void checkEncoder()
 //    }
   int8_t delta = encoder.getDelta();
 
-//    if(sectionSwitch.numClicks() == 3) {
-//        if(dbgMode == 0)
-//            dbgMode = 1;
-//        else
-//            dbgMode = 0;
-//    }
-//    if(dbgMode != 0) {
-//        if(sectionSwitch.numClicks() == 1)
-//            dbgMode = dbgMode == 1 ? 2 : 1;
-//        if(dbgMode == 1)
-//            dbgX += delta;
-//        else
-//            dbgY += delta;
-//        return;
-//    }
+    if(sectionSwitch.numClicks() == 3) {
+        if(dbgMode == 0)
+            dbgMode = 1;
+        else
+            dbgMode = 0;
+    }
+    if(dbgMode != 0) {
+        if(sectionSwitch.numClicks() == 1)
+            dbgMode = dbgMode == 1 ? 2 : 1;
+        if(dbgMode == 1)
+            dbgX += delta;
+        else
+            dbgY += delta;
+        return;
+    }
   if (delta > 0)
   {
-
+    if(sectionSwitch.pressed())
+    {
+        nextSection();
+        return;
+    }
     switch (state)
     {
     case PARAMETER:
@@ -1809,6 +1750,11 @@ void checkEncoder()
   }
   else if (delta < 0)
   {
+      if(sectionSwitch.pressed())
+      {
+          prevSection();
+          return;
+      }
     switch (state)
     {
     case PARAMETER:
