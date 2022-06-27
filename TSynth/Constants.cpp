@@ -57,15 +57,15 @@ const float PROGMEM ENSEMBLE_LFO[128] = {2.0f, 2.1f, 2.3f, 2.4f, 2.6f, 2.7f, 2.9
 const char* INITPATCH = "Solina,1.00,0.43,0.00,0,0,0.99,1.00,0.00,1.00,0.47,0.0,12,-12,12,12,0,0.83,0.70,0.16,0.00,0.00,1.10,282.00,0.00,0.70,0.00,7.24,0,0,0,10.48,0,0,0.00,1,4.00,1448.00,0.22,1864.00,41.00,808.00,0.92,991.00,5.60,0.83,0.00,0.0,0.0,0.0,0.0,0.0";
 
 const String SectionControls[9][4] = {
-        { "PITCH", "WAVEFORM", "PWM AMT", "OSC MIX"}, // Osc1
-        { "Pitch", "Waveform", "PWM Amt", "Detune"}, // Osc2
-        { "Noise", "Env", "PWM Rate", "Osc FX"}, // Noise
-        { "Level", "Waveform", "Rate", "Unison"}, // LFO
-        { "ATK", "DECAY", "SUSTN", "REL"}, // FilterEnvelope
-        { "Cutoff", "Resonance", "Type", "Env"}, // Filter
-        { "Level", "Waveform", "Rate", "Retrig/Tempo"}, // FilterLFO
-        { "ATK", "DECAY", "SUSTN", "REL"}, // Amp
-        { "Glide", "FX Amt", "FX Mix", ""}, // FX
+        { "PITCH", "WAVEFORM", "PWM AMT", "OSC MIX"}, // OSC1
+        { "PITCH", "WAVEFORM", "PWM AMT", "DETUNE"}, // OSC2
+        { "NOISE", "ENV", "PWM RATE", "OSC FX"}, // NOISE
+        { "LEVEL", "WAVEFORM", "RATE", "UNISON"}, // LFO
+        { "ATK", "DECAY", "SUSTN", "REL"}, // FILTERENVELOPE
+        { "CUTOFF", "RESONANCE", "TYPE", "ENV"}, // FILTER
+        { "LEVEL", "WAVEFORM", "RATE", "RETRIG/TEMPO"}, // FILTERLFO
+        { "ATK", "DECAY", "SUSTN", "REL"}, // AMP
+        { "GLIDE", "FX AMT", "FX MIX", ""}, // FX
 };
 
 const uint8_t PROGMEM WAVEFORMS_A[8] = {
