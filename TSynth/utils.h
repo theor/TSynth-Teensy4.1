@@ -42,6 +42,23 @@ size_t indexOfSorted(const T(&array)[N] , T value) {
     return N;
 }
 template<typename T, size_t  N>
+size_t closest(const T(&array)[N] , T value, uint8_t* patchParam) {
+    T minDelta = std::numeric_limits<T>::max();;
+    size_t minIndex = 0;
+    for (size_t i = 0; i < N; ++i) {
+        if (value == array[i])
+            return i;
+        T delta = std::abs(array[i] - value);
+        if(delta < minDelta) {
+            minDelta = delta;
+            minIndex = i;
+        }
+    }
+    if(patchParam)
+        *patchParam = (uint8_t)minIndex;
+    return minIndex;
+}
+template<typename T, size_t  N>
 size_t lastIndexOf(const T(&array)[N] , T value) {
     for (size_t i = N - 1; i >= 0; --i) {
         if (value == array[i]) { return i; }

@@ -27,7 +27,7 @@ extern const float PROGMEM LFOTEMPO[128];
 extern const String LFOTEMPOSTR[128];
 extern const uint8_t PROGMEM OSCMIXA[128];
 extern const uint8_t PROGMEM OSCMIXB[128];
-extern const int8_t PROGMEM PITCH[128];
+extern const int8_t PROGMEM PITCH[27];
 extern const float PROGMEM KEYTRACKINGAMT[128];
 extern const float PROGMEM DIV8192;
 extern const float PROGMEM DIV127;

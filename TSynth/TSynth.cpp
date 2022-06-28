@@ -236,10 +236,10 @@ FLASHMEM void updateGlide(float glideSpeed)
   showCurrentParameterPage(F("Glide"), milliToString(glideSpeed * GLIDEFACTOR));
 }
 
-FLASHMEM void updateWaveformA(uint32_t waveform)
+FLASHMEM void updateWaveformA(uint8_t waveform)
 {
-  groupvec[activeGroupIndex]->setWaveformA(waveform);
-  showCurrentParameterPage(F("1. Waveform"), getWaveformStr(waveform));
+  groupvec[activeGroupIndex]->setWaveformA(WAVEFORMS_A[waveform]);
+  showCurrentParameterPage(F("1. Waveform"), getWaveformStr(WAVEFORMS_A[waveform]));
 }
 
 FLASHMEM void updateWaveformB(uint32_t waveform)
@@ -248,8 +248,9 @@ FLASHMEM void updateWaveformB(uint32_t waveform)
   showCurrentParameterPage(F("2. Waveform"), getWaveformStr(waveform));
 }
 
-FLASHMEM void updatePitchA(int pitch)
+FLASHMEM void updatePitchA(uint8_t pitchMidi)
 {
+    int pitch = PITCH[pitchMidi];
   groupvec[activeGroupIndex]->params().oscPitchA = pitch;
   groupvec[activeGroupIndex]->updateVoices();
   showCurrentParameterPage("1. Semitones", (pitch > 0 ? "+" : "") + String(pitch));
@@ -672,11 +673,11 @@ FLASHMEM void updateEffectMix(float value)
   showCurrentParameterPage(F("Effect Mix"), String(value));
 }
 
-FLASHMEM void updatePatch(String name, uint32_t index)
+FLASHMEM void updatePatch(String name, uint32_t index, int version = 0)
 {
   groupvec[activeGroupIndex]->setPatchName(name);
   groupvec[activeGroupIndex]->setPatchIndex(index);
-  showPatchPage(String(index), name);
+  showPatchPage(String(index), name, version);
 }
 
 void myPitchBend(byte channel, int bend)
@@ -705,7 +706,7 @@ void myControlChange(byte channel, byte control, byte value)
     break;
 
   case CCoscwaveformA:
-    updateWaveformA((uint32_t)clampInto(WAVEFORMS_A, value));
+    updateWaveformA(value);
     break;
 
   case CCoscwaveformB:
@@ -713,7 +714,7 @@ void myControlChange(byte channel, byte control, byte value)
     break;
 
   case CCpitchA:
-    updatePitchA(PITCH[value]);
+    updatePitchA(value);
     break;
 
   case CCpitchB:
@@ -1024,9 +1025,132 @@ FLASHMEM void reinitialiseToPanel()
     volumePrevious = RE_READ;
     patchName = INITPATCHNAME;
 }
+FLASHMEM String getPatchData(PatchMidiData data)
+{
+    return patchName + F(",") +
+    String(data.oscLevelA) + F(",") +
+    String(data.oscLevelB) + F(",") +
+    String(data.noiseLevel) + F(",") +
+    String(data.unison) + F(",") +
+    String(data.oscFX) + F(",") +
+    String(data.detune, 5) + F(",") +
+    String(lfoSyncFreq) + F(",") +
+    String(midiClkTimeInterval) + F(",") +
+    String(lfoTempoValue) + F(",") +
+    String(data.keyTracking) + F(",") +
+    String(data.glide, 5) + F(",") +
+    String(data.pitchA) + F(",") +
+    String(data.pitchB) + F(",") +
+    String(data.waveformA) + F(",") +
+    String(data.waveformB) + F(",") +
+
+    String(data.pWMSource) + F(",") +
+    String(data.pwmAmtA) + F(",") +
+    String(data.pwmAmtB) + F(",") +
+    String(data.pWMRate) + F(",") +
+    String(data.pWA) + F(",") +
+    String(data.pWB) + F(",") +
+    String(data.filterRes) + F(",") +
+    String(data.filterFreq) + F(",") +
+    String(data.filterMixer) + F(",") +
+    String(data.filterEnv) + F(",") +
+    String(data.pitchLFOAmt, 5) + F(",") +
+    String(data.pitchLFORate, 5) + F(",") +
+    String(data.pitchLFOWaveform) + F(",") +
+    String(int(data.pitchLFORetrig)) + F(",") +
+    String(int(data.pitchLFOMidiClkSync)) + F(",") +
+    String(data.filterLfoRate, 5) + F(",") +
+    data.filterLFORetrig + F(",") +
+    data.filterLFOMidiClkSync + F(",") +
+    data.filterLfoAmt + F(",") +
+    data.filterLFOWaveform + F(",") +
+    data.filterAttack + F(",") +
+    data.filterDecay + F(",") +
+    data.filterSustain + F(",") +
+    data.filterRelease + F(",") +
+    data.attack + F(",") +
+    data.decay + F(",") +
+    data.sustain + F(",") +
+    data.release + F(",") +
+
+    String(data.effectAmt) + F(",") +
+    String(data.effectMix) + F(",") +
+    String(data.pitchEnv) + F(",") +
+    String(velocitySens) + F(",") +
+    String(data.chordDetune) + F(",") +
+    String(data.monophonic) + F(",") +
+    String(0.0f) + F(",") +
+    String(0.0f);
+}
+
+FLASHMEM void loadPatchMidiData(PatchMidiData data)
+{
+    updatePatch(data.name, patchNo);
+    updateOscLevelA(data.oscLevelA);
+    updateOscLevelB(data.oscLevelB);
+    updateNoiseLevel(data.noiseLevel);
+    updateUnison(data.unison);
+    updateOscFX(data.oscFX);
+    updateDetune(data.detune, data.chordDetune);
+    lfoSyncFreq =data.lfoSyncFreq;
+    midiClkTimeInterval =data.midiClkTimeInterval;
+    lfoTempoValue =data.lfoTempoValue;
+    updateKeyTracking(data.keyTracking);
+    updateGlide(data.glide);
+    updatePitchA(data.pitchA);
+    updatePitchB(data.pitchB);
+    updateWaveformA(data.waveformA);
+    updateWaveformB(data.waveformB);
+    updatePWMSource(data.pWMSource);
+    updatePWA(data.pWA, data.pwmAmtA);
+    updatePWB(data.pWB, data.pwmAmtB);
+    updatePWMRate(data.pWMRate);
+    updateFilterRes(data.filterRes);
+    resonancePrevValue =data.filterRes; // Pick-up
+    updateFilterFreq(data.filterFreq);
+    filterfreqPrevValue =data.filterFreq; // Pick-up
+    updateFilterMixer(data.filterMixer);
+    filterMixPrevValue =data.filterMixer; // Pick-up
+    updateFilterEnv(data.filterEnv);
+    updatePitchLFOAmt(data.pitchLFOAmt);
+    oscLfoAmtPrevValue =data.pitchLFOAmt; // PICK-UP
+    updatePitchLFORate(data.pitchLFORate);
+    oscLfoRatePrevValue =data.pitchLFORate; // PICK-UP
+    updatePitchLFOWaveform(data.pitchLFOWaveform);
+    updatePitchLFORetrig(data.pitchLFORetrig > 0);
+    updatePitchLFOMidiClkSync(data.pitchLFOMidiClkSync > 0); // MIDI CC Only
+    updateFilterLfoRate(data.filterLfoRate, "");
+    filterLfoRatePrevValue =data.filterLfoRate; // PICK-UP
+    updateFilterLFORetrig(data.filterLFORetrig > 0);
+    updateFilterLFOMidiClkSync(data.filterLFOMidiClkSync > 0);
+    updateFilterLfoAmt(data.filterLfoAmt);
+    filterLfoAmtPrevValue =data.filterLfoAmt; // PICK-UP
+    updateFilterLFOWaveform(data.filterLFOWaveform);
+    updateFilterAttack(data.filterAttack);
+    updateFilterDecay(data.filterDecay);
+    updateFilterSustain(data.filterSustain);
+    updateFilterRelease(data.filterRelease);
+    updateAttack(data.attack);
+    updateDecay(data.decay);
+    updateSustain(data.sustain);
+    updateRelease(data.release);
+    updateEffectAmt(data.effectAmt);
+    fxAmtPrevValue =data.effectAmt; // PICK-UP
+    updateEffectMix(data.effectMix);
+    fxMixPrevValue =data.effectMix; // PICK-UP
+    updatePitchEnv(data.pitchEnv);
+    velocitySens =data.velocitySens;
+    groupvec[activeGroupIndex]->setMonophonic(data.monophonic);
+    //  SPARE1 = data[50].toFloat();
+    //  SPARE2 = data[51].toFloat();
+
+    Serial.print(F("Set Patch: "));
+    Serial.println(data.name);
+}
+
 FLASHMEM void setCurrentPatchData(String data[])
 {
-    updatePatch(data[0], patchNo);
+    updatePatch(data[0], patchNo, data[50].toInt());
     updateOscLevelA(data[1].toFloat());
     updateOscLevelB(data[2].toFloat());
     updateNoiseLevel(data[3].toFloat());
@@ -1039,9 +1163,11 @@ FLASHMEM void setCurrentPatchData(String data[])
     lfoTempoValue = data[9].toFloat();
     updateKeyTracking(data[10].toFloat());
     updateGlide(data[11].toFloat());
-    updatePitchA(data[12].toFloat());
+
+    updatePitchA(closest(PITCH, (int8_t)data[12].toInt(), &patchMidiData.pitchA));
+//    dbgMsg = String(data[12].toInt()) + String(' ') + closest(PITCH, (int8_t)data[12].toInt());
     updatePitchB(data[13].toFloat());
-    updateWaveformA(data[14].toInt());
+    updateWaveformA(closest(WAVEFORMS_A, (uint8_t)data[14].toInt(), &patchMidiData.waveformA));
     updateWaveformB(data[15].toInt());
     updatePWMSource(data[16].toInt());
     updatePWA(data[20].toFloat(), data[17].toFloat());
@@ -1313,20 +1439,40 @@ void sendSysex(String ss) {
     usbMIDI.sendSysEx(ss.length(), reinterpret_cast<const uint8_t *>(ss.c_str()), false);
 }
 
+byte cycleMidi(byte cc, byte& b, int delta, int max = 128) {
+    int v = (int)b + delta;
+    while(v < 0) v += max;
+    while(v >= max) v -= max;
+    b = (byte)v;
+
+    midiCCOut(cc, b);
+    myControlChange(midiChannel, cc, b);
+    return b;
+}
+
+template<typename T, size_t  N>
+byte cycleMidiIn(byte cc, byte& b, int delta, const T(&array)[N]) {
+    int v = (int)b + delta;
+    while(v < 0) v += N;
+    while(v >= (long)N) v -= N;
+    b = (byte)v;
+
+    midiCCOut(cc, b);
+    myControlChange(midiChannel, cc, b);
+    return b;
+}
+
 void updateSection(byte encIndex, bool moveUp) {
+    int delta = (moveUp ? 1 : -1) * (sectionSwitch.held() ? /*1*/0 : 1);
     switch(section) {
         case Section::Osc1:
             switch(encIndex) {
                 case 0:{
-                    auto newVal = cycleIndexOf(PITCH, (int8_t) groupvec[activeGroupIndex]->params().oscPitchA, moveUp);
-                    midiCCOut(CCpitchA, newVal);
-                    myControlChange(midiChannel, CCpitchA, newVal);
+                    cycleMidiIn(CCpitchA, patchMidiData.pitchA, delta, PITCH);
                     return;
                 }
                 case 1:{
-                    auto newVal = cycleIndexOf(WAVEFORMS_A, (uint8_t) groupvec[activeGroupIndex]->getWaveformA(), moveUp);
-                    midiCCOut(CCoscwaveformA, WAVEFORMS_A[newVal]);
-                    updateWaveformA(WAVEFORMS_A[newVal]);
+                    cycleMidiIn(CCoscwaveformA, patchMidiData.waveformA, delta, WAVEFORMS_A);
                     return;
                 }
                 case 2: {
@@ -1375,7 +1521,7 @@ void updateSection(byte encIndex, bool moveUp) {
                     updatePWB(LINEARCENTREZERO[idx], LINEAR[idx]);
                     return;
                 }
-                // todo check. chord detune is an enum (unison 2 ?), detune (unison 1?) is a percent. pick a unit for each.
+                    // todo check. chord detune is an enum (unison 2 ?), detune (unison 1?) is a percent. pick a unit for each.
                 case 3: /*detune*/ {
                     byte mux1Read = cycleByte((uint8_t)groupvec[activeGroupIndex]->params().chordDetune, moveUp, false);
                     midiCCOut(CCdetune, mux1Read);
@@ -1406,7 +1552,7 @@ void updateSection(byte encIndex, bool moveUp) {
                     midiCCOut(CCpitchenv, mux1Read);
                     myControlChange(midiChannel, CCpitchenv, mux1Read);
 
-                     return;
+                    return;
                 }
                 case 2: {
                     float value = groupvec[activeGroupIndex]->getPwmRate();
@@ -1439,7 +1585,7 @@ void updateSection(byte encIndex, bool moveUp) {
                     auto newVal = cycleIndexOf(WAVEFORMS_LFO, (uint8_t) groupvec[activeGroupIndex]->getPitchLfoWaveform(), moveUp);
                     midiCCOut(CCoscLfoWaveform, WAVEFORMS_LFO_MIDI[newVal]);
                     myControlChange(midiChannel, CCoscLfoWaveform, WAVEFORMS_LFO_MIDI[newVal]);
-                     return;
+                    return;
                 }
                 case 2: {
 
@@ -1619,13 +1765,13 @@ void updateSection(byte encIndex, bool moveUp) {
                     auto newVal = cycleIndexOfSorted(POWER, groupvec[activeGroupIndex]->params().glideSpeed, moveUp, false);
                     midiCCOut(CCglide, newVal);
                     myControlChange(midiChannel, CCglide, newVal);
-                     return;
+                    return;
                 }
                 case 1:{
                     auto newVal = cycleIndexOfSorted(ENSEMBLE_LFO, groupvec[activeGroupIndex]->getEffectAmount(), moveUp, false);
                     midiCCOut(CCfxamt, newVal);
                     myControlChange(midiChannel, CCfxamt, newVal);
-                     return;
+                    return;
                 }
                 case 2: {
                     auto newVal = cycleIndexOfSorted(LINEAR, groupvec[activeGroupIndex]->getEffectMix(), moveUp, false);

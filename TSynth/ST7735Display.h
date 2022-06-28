@@ -35,6 +35,7 @@ String currentValue = "";
 float currentFloatValue = 0.0;
 String currentPgmNum = "";
 String currentPatchName = "";
+int currentPatchVersion = 0;
 String newPatchName = "";
 const char * currentSettingsOption = "";
 const char * currentSettingsValue = "";
@@ -71,7 +72,7 @@ enum class Section {
     Amp,
     FX
 };
-Section section = Section::Filter;
+Section section = Section::Osc1;
 
 void prevSection() {
     switch(section) {
@@ -328,28 +329,31 @@ FLASHMEM void renderCurrentPatchPage() {
 
 
   // Draw rectangles to represent each voice.
-  uint8_t x_step = 10;
-  uint8_t y_step = 10;
-  uint8_t x_end = 147;
-  uint8_t x_start = 2;
-  uint8_t y_start = 7;
-  uint8_t y_end = 47;
-  uint8_t idx = 0;
-  for (uint8_t y = y_start; y <= y_end; y += y_step) {
-    for (uint8_t x = x_start; x <= x_end; x += x_step) {
-      // Always draw border to indicate timbre.
-      tft.fillRect(x, y, 8, 8, colourPriority[fillColour[idx]]);
-      tft.drawRect(x, y, 8, 8, colourPriority[borderColour[idx]]);
-      idx++;
-      if (idx >= global.maxVoices()) {
-        break;
-      }
-    }
-      if (idx >= global.maxVoices())
-          break;
-  }
-
-  if(dbgMode != 0) {
+//  uint8_t x_step = 10;
+//  uint8_t y_step = 10;
+//  uint8_t x_end = 147;
+//  uint8_t x_start = 2;
+//  uint8_t y_start = 7;
+//  uint8_t y_end = 47;
+//  uint8_t idx = 0;
+//  for (uint8_t y = y_start; y <= y_end; y += y_step) {
+//    for (uint8_t x = x_start; x <= x_end; x += x_step) {
+//      // Always draw border to indicate timbre.
+//      tft.fillRect(x, y, 8, 8, colourPriority[fillColour[idx]]);
+//      tft.drawRect(x, y, 8, 8, colourPriority[borderColour[idx]]);
+//      idx++;
+//      if (idx >= global.maxVoices()) {
+//        break;
+//      }
+//    }
+//      if (idx >= global.maxVoices())
+//          break;
+//  }
+tft.setCursor(10, 10);
+    tft.setFont(nullptr);
+    tft.setTextColor(ST7735_YELLOW);
+    tft.println(dbgMsg);
+  if(dbgMode == 1 || dbgMode == 2) {
       tft.setCursor(10, 10);
       tft.setFont(nullptr);
       tft.setTextColor(ST7735_YELLOW);
@@ -370,6 +374,8 @@ FLASHMEM void renderCurrentPatchPage() {
   tft.setCursor(36, 33);
 
   tft.setTextColor(ST7735_WHITE);
+  tft.print(currentPatchVersion);
+  tft.print('/');
   tft.println(currentPatchName);
 //  if(currentPatchName.length() >= 8) {
 //      tft.setCursor(30, 60);
@@ -613,9 +619,10 @@ FLASHMEM void showCurrentParameterPage(String param, String val) {
   showCurrentParameterPage(param, val, PARAMETER);
 }
 
-FLASHMEM void showPatchPage(String number, String patchName) {
+FLASHMEM void showPatchPage(String number, String patchName, int patchVersion = 0) {
   currentPgmNum = number;
   currentPatchName = patchName;
+  currentPatchVersion = patchVersion;
 }
 
 FLASHMEM void showSettingsPage(const char *  option, const char * value, int settingsPart) {

@@ -43,4 +43,5 @@ extern float fxMixPrevValue;
 extern int dbgMode;
 extern uint8_t dbgX;
 extern uint8_t dbgY;
+extern String dbgMsg;
 //extern uint8_t buttonStates[16];
