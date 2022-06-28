@@ -1579,7 +1579,7 @@ void updateSection(byte encIndex, bool moveUp) {
                         midiCCOut(CCfilterlforetrig, newVal);
                         myControlChange(midiChannel, CCfilterlforetrig, newVal);
                     }
-//                    return;
+                    return;
                 }
             }
             break;
