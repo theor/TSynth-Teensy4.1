@@ -72,18 +72,11 @@ static byte muxInput = 0;
 static int volumeRead = 0;
 static int volumePrevious = 0;
 
-/*
- * recall on sig
- * back on s0
- * save s1
- * settings s3
- * section s2
- * */
-#define RECALL_SW MUX1_S
-#define BACK_SW MUX_0
-#define SAVE_SW MUX_1
-#define SETTINGS_SW MUX_3
-#define SECTION_SW MUX_2
+#define RECALL_SW MUX_0 // MUX1_S
+#define BACK_SW MUX_2
+#define SAVE_SW MUX_3
+#define SETTINGS_SW MUX_1
+#define SECTION_SW MUX1_S // MUX_2
 TButton sectionSwitch{SECTION_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
 TButton recallButton{RECALL_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION}; //On encoder
 TButton saveButton{SAVE_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
