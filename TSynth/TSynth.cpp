@@ -437,8 +437,9 @@ FLASHMEM void updateOscMix(uint8_t midiValue) {
     updateOscLevelA(midiValue);
     updateOscLevelB(midiValue);
 }
-FLASHMEM void updateNoiseLevel(float value)
+FLASHMEM void updateNoiseLevel(byte midiValue)
 {
+    float value = LINEARCENTREZERO[midiValue];
   float pink = 0.0;
   float white = 0.0;
   if (value > 0)
@@ -508,15 +509,17 @@ FLASHMEM void updateFilterMixer(float value)
   showCurrentParameterPage(F("Filter Type"), filterStr);
 }
 
-FLASHMEM void updateFilterEnv(float value)
+FLASHMEM void updateFilterEnv(uint8_t midiValue)
 {
+    float value = LINEARCENTREZERO[midiValue] * OSCMODMIXERMAX;
   groupvec[activeGroupIndex]->setFilterEnvelope(value);
   showCurrentParameterPage(F("Filter Env."), String(value));
 }
 
-FLASHMEM void updatePitchEnv(float value)
+FLASHMEM void updatePitchEnv(uint8_t midiValue)
 {
-  groupvec[activeGroupIndex]->setPitchEnvelope(value);
+    float value = LINEARCENTREZERO[midiValue] * OSCMODMIXERMAX;
+    groupvec[activeGroupIndex]->setPitchEnvelope(value);
   showCurrentParameterPage(F("Pitch Env Amt"), String(value));
 }
 
@@ -715,7 +718,7 @@ void myControlChange(byte channel, byte control, byte value)
     break;
 
   case CCpitchenv:
-    updatePitchEnv(LINEARCENTREZERO[value] * OSCMODMIXERMAX);
+    updatePitchEnv(value);
     break;
 
   case CCoscwaveformA:
@@ -774,7 +777,7 @@ void myControlChange(byte channel, byte control, byte value)
     break;
 
   case CCnoiseLevel:
-    updateNoiseLevel(LINEARCENTREZERO[value]);
+    updateNoiseLevel(value);
     break;
 
   case CCfilterfreq:
@@ -807,7 +810,7 @@ void myControlChange(byte channel, byte control, byte value)
     break;
 
   case CCfilterenv:
-    updateFilterEnv(LINEARCENTREZERO[value] * FILTERMODMIXERMAX);
+    updateFilterEnv(value);
     break;
 
   case CCkeytracking:
@@ -1184,18 +1187,17 @@ uint8_t fromMix(float mixA, float mixB)
 
 FLASHMEM void setCurrentPatchData(String data[])
 {
+    //    dbgMsg = String(data[6].toFloat()) + String(' ')+ patchMidiData.detune+ String(' ') + data[48].toFloat();
     updatePatch(data[0], patchNo, data[50].toInt());
     updateOscMix(patchMidiData.oscMix = fromMix(data[1].toFloat(), data[2].toFloat()));
-//    updateOscLevelA(data[1].toFloat());
-//    updateOscLevelB(data[2].toFloat());
-    updateNoiseLevel(data[3].toFloat());
+
+    updateNoiseLevel(closest(LINEARCENTREZERO,  data[3].toFloat(), &patchMidiData.noiseLevel));
     updateUnison(data[4].toInt());
     updateOscFX(patchMidiData.oscFX = (uint8_t)data[5].toInt());
     // 1.0f - (MAXDETUNE * POWER[value]), value
     float detunePower = (float)((1.0 - data[6].toFloat()) / MAXDETUNE);
     // TODO if unison mode == 2, use patchMidiData.chordDetune
     updateDetune(closest(POWER, detunePower, &patchMidiData.detune));
-//    dbgMsg = String(data[6].toFloat()) + String(' ')+ patchMidiData.detune+ String(' ') + data[48].toFloat();
     // Why is this MIDI Clock stuff part of the patch??
     lfoSyncFreq = data[7].toInt();
     midiClkTimeInterval = data[8].toInt();
@@ -1222,7 +1224,7 @@ FLASHMEM void setCurrentPatchData(String data[])
     filterfreqPrevValue = data[23].toInt(); // Pick-up
     updateFilterMixer(data[24].toFloat());
     filterMixPrevValue = data[24].toFloat(); // Pick-up
-    updateFilterEnv(data[25].toFloat());
+    updateFilterEnv(closest(LINEARCENTREZERO, data[25].toFloat()/ OSCMODMIXERMAX, &patchMidiData.filterEnv));
     updatePitchLFOAmt(data[26].toFloat());
     oscLfoAmtPrevValue = data[26].toFloat(); // PICK-UP
     updatePitchLFORate(data[27].toFloat());
@@ -1249,7 +1251,7 @@ FLASHMEM void setCurrentPatchData(String data[])
     fxAmtPrevValue = data[44].toFloat(); // PICK-UP
     updateEffectMix(data[45].toFloat());
     fxMixPrevValue = data[45].toFloat(); // PICK-UP
-    updatePitchEnv(data[46].toFloat());
+    updatePitchEnv(closest(LINEARCENTREZERO, data[46].toFloat() / OSCMODMIXERMAX, &patchMidiData.pitchEnv));
     velocitySens = data[47].toFloat();
     groupvec[activeGroupIndex]->setMonophonic(data[49].toInt());
     //  SPARE1 = data[50].toFloat();
@@ -1539,24 +1541,11 @@ void updateSection(byte encIndex, bool moveUp) {
             // "Noise", "Env", "PWM Rate", "Osc FX"
             switch(encIndex) {
                 case 0:{
-                    float value = groupvec[activeGroupIndex]->getPinkNoiseLevel() > 0
-                                  ? groupvec[activeGroupIndex]->getPinkNoiseLevel()
-                                  : (- groupvec[activeGroupIndex]->getWhiteNoiseLevel());
-                    byte mux1Read = cycleIndexOfSorted(LINEARCENTREZERO,
-                                                       value, moveUp, false);
-
-                    midiCCOut(CCnoiseLevel, mux1Read);
-                    myControlChange(midiChannel, CCnoiseLevel, mux1Read);
+                    cycleMidiIn(CCnoiseLevel, patchMidiData.noiseLevel, delta, 128, true);
                     return;
                 }
                 case 1:{
-                    float value = groupvec[activeGroupIndex]->getPitchEnvelope() / OSCMODMIXERMAX;
-
-                    byte mux1Read = cycleIndexOfSorted(LINEARCENTREZERO,
-                                                       value, moveUp, false);
-                    midiCCOut(CCpitchenv, mux1Read);
-                    myControlChange(midiChannel, CCpitchenv, mux1Read);
-
+                    cycleMidiIn(CCpitchenv, patchMidiData.pitchEnv, delta, 128, true);
                     return;
                 }
                 case 2: {
@@ -1671,9 +1660,7 @@ void updateSection(byte encIndex, bool moveUp) {
                     return;
                 }
                 case 3: {
-                    auto newVal = cycleIndexOfSorted(LINEARCENTREZERO, groupvec[activeGroupIndex]->getFilterEnvelope(), moveUp, false);
-                    midiCCOut(CCfilterenv, newVal);
-                    myControlChange(midiChannel, CCfilterenv, newVal);
+                    cycleMidiIn(CCfilterenv, patchMidiData.filterEnv, delta, 128, true);
                     return;
                 }
             }
