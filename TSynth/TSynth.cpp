@@ -230,8 +230,9 @@ FLASHMEM void updateVolume(float vol)
   showCurrentParameterPage(F("Volume"), vol);
 }
 
-FLASHMEM void updateGlide(float glideSpeed)
+FLASHMEM void updateGlide(uint8_t midiValue)
 {
+    float glideSpeed = POWER[midiValue];
   groupvec[activeGroupIndex]->params().glideSpeed = glideSpeed;
   showCurrentParameterPage(F("Glide"), milliToString(glideSpeed * GLIDEFACTOR));
 }
@@ -685,14 +686,16 @@ FLASHMEM void updateOscFX(uint8_t value)
   }
 }
 
-FLASHMEM void updateEffectAmt(float value)
+FLASHMEM void updateEffectAmt(uint8_t midiValue)
 {
+    float value = ENSEMBLE_LFO[midiValue];
   groupvec[activeGroupIndex]->setEffectAmount(value);
   showCurrentParameterPage(F("Effect Amt"), String(value) + F(" Hz"));
 }
 
-FLASHMEM void updateEffectMix(float value)
+FLASHMEM void updateEffectMix(uint8_t midiValue)
 {
+    float value = LINEAR[midiValue];
   groupvec[activeGroupIndex]->setEffectMix(value);
   showCurrentParameterPage(F("Effect Mix"), String(value));
 }
@@ -722,7 +725,7 @@ void myControlChange(byte channel, byte control, byte value)
     break;
 
   case CCglide:
-    updateGlide(POWER[value]);
+    updateGlide(value);
     break;
 
   case CCpitchenv:
@@ -789,32 +792,17 @@ void myControlChange(byte channel, byte control, byte value)
     break;
 
   case CCfilterfreq:
-    // Pick up
-    if (!pickUpActive && pickUp && (filterfreqPrevValue < FILTERFREQS256[(value - TOLERANCE) * 2] || filterfreqPrevValue > FILTERFREQS256[(value - TOLERANCE) * 2]))
-      return; // PICK-UP
-
     // MIDI is 7 bit, 128 values and needs to choose alternate filterfreqs(8 bit) by multiplying by 2
     updateFilterFreq(FILTERFREQS256[value * 2]);
-    filterfreqPrevValue = FILTERFREQS256[value * 2]; // PICK-UP
     break;
 
   case CCfilterres:
-    // Pick up
-    if (!pickUpActive && pickUp && (resonancePrevValue < ((14.29f * POWER[value - TOLERANCE]) + 0.71f) || resonancePrevValue > ((14.29f * POWER[value + TOLERANCE]) + 0.71f)))
-      return; // PICK-UP
-
     // If <1.1 there is noise at high cutoff freq
     updateFilterRes(FILTERRESONANCE[value]);
-    resonancePrevValue = FILTERRESONANCE[value]; // PICK-UP
     break;
 
   case CCfiltermixer:
-    // Pick up
-    if (!pickUpActive && pickUp && (filterMixPrevValue < LINEAR_FILTERMIXER[value - TOLERANCE] || filterMixPrevValue > LINEAR_FILTERMIXER[value + TOLERANCE]))
-      return; // PICK-UP
-
     updateFilterMixer(LINEAR_FILTERMIXER[value]);
-    filterMixPrevValue = LINEAR_FILTERMIXER[value]; // PICK-UP
     break;
 
   case CCfilterenv:
@@ -831,20 +819,11 @@ void myControlChange(byte channel, byte control, byte value)
     break;
 
   case CCosclfoamt:
-    // Pick up
-    if (!pickUpActive && pickUp && (oscLfoAmtPrevValue < POWER[value - TOLERANCE] || oscLfoAmtPrevValue > POWER[value + TOLERANCE]))
-      return; // PICK-UP
-
     updatePitchLFOAmt(POWER[value]);
-    oscLfoAmtPrevValue = POWER[value]; // PICK-UP
     break;
 
   case CCoscLfoRate:
   {
-    // Pick up
-    if (!pickUpActive && pickUp && (oscLfoRatePrevValue < LFOMAXRATE * POWER[value - TOLERANCE] || oscLfoRatePrevValue > LFOMAXRATE * POWER[value + TOLERANCE]))
-      return; // PICK-UP
-
     float rate = 0.0;
     if (groupvec[activeGroupIndex]->getPitchLfoMidiClockSync())
     {
@@ -858,7 +837,6 @@ void myControlChange(byte channel, byte control, byte value)
       rate = LFOMAXRATE * POWER[value];
     }
     updatePitchLFORate(rate);
-    oscLfoRatePrevValue = rate; // PICK-UP
     break;
   }
 
@@ -876,10 +854,6 @@ void myControlChange(byte channel, byte control, byte value)
 
   case CCfilterlforate:
   {
-    // Pick up
-    if (!pickUpActive && pickUp && (filterLfoRatePrevValue < LFOMAXRATE * POWER[value - TOLERANCE] || filterLfoRatePrevValue > LFOMAXRATE * POWER[value + TOLERANCE]))
-      return; // PICK-UP
-
     float rate;
     String timeDivStr = "";
     if (groupvec[activeGroupIndex]->getFilterLfoMidiClockSync())
@@ -894,17 +868,11 @@ void myControlChange(byte channel, byte control, byte value)
     }
 
     updateFilterLfoRate(rate, timeDivStr);
-    filterLfoRatePrevValue = rate; // PICK-UP
     break;
   }
 
   case CCfilterlfoamt:
-    // Pick up
-    if (!pickUpActive && pickUp && (filterLfoAmtPrevValue < LINEAR[value - TOLERANCE] * FILTERMODMIXERMAX || filterLfoAmtPrevValue > LINEAR[value + TOLERANCE] * FILTERMODMIXERMAX))
-      return; // PICK-UP
-
     updateFilterLfoAmt(LINEAR[value] * FILTERMODMIXERMAX);
-    filterLfoAmtPrevValue = LINEAR[value] * FILTERMODMIXERMAX; // PICK-UP
     break;
 
   case CCfilterlfowaveform:
@@ -957,19 +925,13 @@ void myControlChange(byte channel, byte control, byte value)
     break;
 
   case CCfxamt:
-    // Pick up
-    if (!pickUpActive && pickUp && (fxAmtPrevValue < ENSEMBLE_LFO[value - TOLERANCE] || fxAmtPrevValue > ENSEMBLE_LFO[value + TOLERANCE]))
-      return; // PICK-UP
-    updateEffectAmt(ENSEMBLE_LFO[value]);
-    fxAmtPrevValue = ENSEMBLE_LFO[value]; // PICK-UP
+
+    updateEffectAmt(value);
     break;
 
   case CCfxmix:
-    // Pick up
-    if (!pickUpActive && pickUp && (fxMixPrevValue < LINEAR[value - TOLERANCE] || fxMixPrevValue > LINEAR[value + TOLERANCE]))
-      return; // PICK-UP
-    updateEffectMix(LINEAR[value]);
-    fxMixPrevValue = LINEAR[value]; // PICK-UP
+
+    updateEffectMix(value);
     break;
 
   case CCallnotesoff:
@@ -1134,25 +1096,18 @@ FLASHMEM void loadPatchMidiData(PatchMidiData data)
     updatePWB(data.pWB, data.pWB);
     updatePWMRate(data.pWMRate);
     updateFilterRes(data.filterRes);
-    resonancePrevValue =data.filterRes; // Pick-up
     updateFilterFreq(data.filterFreq);
-    filterfreqPrevValue =data.filterFreq; // Pick-up
     updateFilterMixer(data.filterMixer);
-    filterMixPrevValue =data.filterMixer; // Pick-up
     updateFilterEnv(data.filterEnv);
     updatePitchLFOAmt(data.pitchLFOAmt);
-    oscLfoAmtPrevValue =data.pitchLFOAmt; // PICK-UP
     updatePitchLFORate(data.pitchLFORate);
-    oscLfoRatePrevValue =data.pitchLFORate; // PICK-UP
     updatePitchLFOWaveform(data.pitchLFOWaveform);
     updatePitchLFORetrig(data.pitchLFORetrig > 0);
     updatePitchLFOMidiClkSync(data.pitchLFOMidiClkSync > 0); // MIDI CC Only
     updateFilterLfoRate(data.filterLfoRate, "");
-    filterLfoRatePrevValue =data.filterLfoRate; // PICK-UP
     updateFilterLFORetrig(data.filterLFORetrig > 0);
     updateFilterLFOMidiClkSync(data.filterLFOMidiClkSync > 0);
     updateFilterLfoAmt(data.filterLfoAmt);
-    filterLfoAmtPrevValue =data.filterLfoAmt; // PICK-UP
     updateFilterLFOWaveform(data.filterLFOWaveform);
     updateFilterAttack(data.filterAttack);
     updateFilterDecay(data.filterDecay);
@@ -1163,9 +1118,7 @@ FLASHMEM void loadPatchMidiData(PatchMidiData data)
     updateSustain(data.sustain);
     updateRelease(data.release);
     updateEffectAmt(data.effectAmt);
-    fxAmtPrevValue =data.effectAmt; // PICK-UP
     updateEffectMix(data.effectMix);
-    fxMixPrevValue =data.effectMix; // PICK-UP
     updatePitchEnv(data.pitchEnv);
     velocitySens =data.velocitySens;
     groupvec[activeGroupIndex]->setMonophonic(data.monophonic);
@@ -1211,7 +1164,7 @@ FLASHMEM void setCurrentPatchData(String data[])
     midiClkTimeInterval = data[8].toInt();
     lfoTempoValue = data[9].toFloat();
     updateKeyTracking(data[10].toFloat());
-    updateGlide(data[11].toFloat());
+    updateGlide(closest(POWER, data[11].toFloat(), &patchMidiData.glide));
 
     updatePitchA(closest(PITCH, (int8_t)data[12].toInt(), &patchMidiData.pitchA));
 //    dbgMsg = String(data[12].toInt()) + String(' ') + patchMidiData.pitchA;
@@ -1227,25 +1180,18 @@ FLASHMEM void setCurrentPatchData(String data[])
     updatePWB(closest(LINEARCENTREZERO,  data[21].toFloat(), &patchMidiData.pWB),
               closest(LINEAR, data[18].toFloat(), &patchMidiData.pwmAmtB));
     updateFilterRes(data[22].toFloat());
-    resonancePrevValue = data[22].toFloat(); // Pick-up
     updateFilterFreq(data[23].toFloat());
-    filterfreqPrevValue = data[23].toInt(); // Pick-up
     updateFilterMixer(data[24].toFloat());
-    filterMixPrevValue = data[24].toFloat(); // Pick-up
     updateFilterEnv(closest(LINEARCENTREZERO, data[25].toFloat()/ OSCMODMIXERMAX, &patchMidiData.filterEnv));
     updatePitchLFOAmt(data[26].toFloat());
-    oscLfoAmtPrevValue = data[26].toFloat(); // PICK-UP
     updatePitchLFORate(data[27].toFloat());
-    oscLfoRatePrevValue = data[27].toFloat(); // PICK-UP
     updatePitchLFOWaveform(data[28].toInt());
     updatePitchLFORetrig(data[29].toInt() > 0);
     updatePitchLFOMidiClkSync(data[30].toInt() > 0); // MIDI CC Only
     updateFilterLfoRate(data[31].toFloat(), "");
-    filterLfoRatePrevValue = data[31].toFloat(); // PICK-UP
     updateFilterLFORetrig(data[32].toInt() > 0);
     updateFilterLFOMidiClkSync(data[33].toInt() > 0);
     updateFilterLfoAmt(data[34].toFloat());
-    filterLfoAmtPrevValue = data[34].toFloat(); // PICK-UP
     updateFilterLFOWaveform(data[35].toFloat());
     updateFilterAttack(closest(ENVTIMES,(uint16_t)data[36].toFloat(), &patchMidiData.filterAttack));
     updateFilterDecay(closest(ENVTIMES,(uint16_t)data[37].toFloat(), &patchMidiData.filterDecay));
@@ -1255,10 +1201,8 @@ FLASHMEM void setCurrentPatchData(String data[])
     updateDecay(closest(ENVTIMES,(uint16_t)data[41].toFloat(), &patchMidiData.decay));
     updateSustain(closest(LINEAR,data[42].toFloat(), &patchMidiData.sustain));
     updateRelease(closest(ENVTIMES,(uint16_t)data[43].toFloat(), &patchMidiData.release));
-    updateEffectAmt(data[44].toFloat());
-    fxAmtPrevValue = data[44].toFloat(); // PICK-UP
-    updateEffectMix(data[45].toFloat());
-    fxMixPrevValue = data[45].toFloat(); // PICK-UP
+    updateEffectAmt(closest(ENSEMBLE_LFO, data[44].toFloat(), &patchMidiData.effectAmt));
+    updateEffectMix(closest(LINEAR, data[45].toFloat(), &patchMidiData.effectMix));
     updatePitchEnv(closest(LINEARCENTREZERO, data[46].toFloat() / OSCMODMIXERMAX, &patchMidiData.pitchEnv));
     velocitySens = data[47].toFloat();
     groupvec[activeGroupIndex]->setMonophonic(data[49].toInt());
@@ -1669,50 +1613,19 @@ void updateSection(byte encIndex, bool moveUp) {
         case Section::Amp:
             // "ATK", "DECAY", "SUSTN", "REL"
             switch(encIndex) {
-
-                case 0:{
-                    cycleMidiIn(CCampattack, patchMidiData.attack, delta, ENVTIMES, true);
-                    return;
-                }
-                case 1:{
-                    cycleMidiIn(CCampdecay, patchMidiData.decay, delta, ENVTIMES, true);
-                    return;
-                }
-                case 2: {
-                    cycleMidiIn(CCampsustain, patchMidiData.sustain, delta, LINEAR, true);
-                    return;
-                }
-                case 3: {
-                    cycleMidiIn(CCamprelease, patchMidiData.release, delta, ENVTIMES, true);
-                    return;
-                }
+                case 0: cycleMidiIn(CCampattack, patchMidiData.attack, delta, ENVTIMES, true);return;
+                case 1: cycleMidiIn(CCampdecay, patchMidiData.decay, delta, ENVTIMES, true);return;
+                case 2:  cycleMidiIn(CCampsustain, patchMidiData.sustain, delta, LINEAR, true);return;
+                case 3:  cycleMidiIn(CCamprelease, patchMidiData.release, delta, ENVTIMES, true);return;
             }
             break;
         case Section::FX:
             // "Glide", "FX Amt", "FX Mix", "4"
             switch(encIndex) {
-                case 0:{
-                    auto newVal = cycleIndexOfSorted(POWER, groupvec[activeGroupIndex]->params().glideSpeed, moveUp, false);
-                    midiCCOut(CCglide, newVal);
-                    myControlChange(midiChannel, CCglide, newVal);
-                    return;
-                }
-                case 1:{
-                    auto newVal = cycleIndexOfSorted(ENSEMBLE_LFO, groupvec[activeGroupIndex]->getEffectAmount(), moveUp, false);
-                    midiCCOut(CCfxamt, newVal);
-                    myControlChange(midiChannel, CCfxamt, newVal);
-                    return;
-                }
-                case 2: {
-                    auto newVal = cycleIndexOfSorted(LINEAR, groupvec[activeGroupIndex]->getEffectMix(), moveUp, false);
-                    midiCCOut(CCfxmix, newVal);
-                    myControlChange(midiChannel, CCfxmix, newVal);
-                    return;
-                }
-                case 3: {
-                    // unused
-                    return;
-                }
+                case 0:cycleMidiIn(CCglide, patchMidiData.glide, delta, POWER, true);return;
+                case 1:cycleMidiIn(CCfxamt, patchMidiData.effectAmt, delta, ENSEMBLE_LFO, true);return;
+                case 2: cycleMidiIn(CCfxmix, patchMidiData.effectMix, delta, LINEAR, true);return;
+                case 3:  /*unused*/ return;
             }
             break;
     }
@@ -1992,8 +1905,6 @@ FLASHMEM void setup()
     changeMIDIThruMode();
     // Read Encoder Direction from EEPROM
     encCW = getEncoderDir();
-    // Read Pick-up enable from EEPROM - experimental feature
-    pickUp = getPickupEnable();
     // Read bass enhance enable from EEPROM
     if (getBassEnhanceEnable())
         global.sgtl5000_1.enhanceBassEnable();

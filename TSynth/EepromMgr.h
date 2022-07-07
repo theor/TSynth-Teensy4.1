@@ -130,16 +130,6 @@ FLASHMEM void storeEncoderDir(byte encoderDir){
   EEPROM.update(EEPROM_ENCODER_DIR, encoderDir);
 }
 
-FLASHMEM boolean getPickupEnable() {
-  byte pu = EEPROM.read(EEPROM_PICKUP_ENABLE); 
-  if (pu < 0 || pu > 1)return false; //If EEPROM has no pickup enable stored
-  return pu == 1 ? true : false;
-}
-
-FLASHMEM void storePickupEnable(byte pickupEnable){
-  EEPROM.update(EEPROM_PICKUP_ENABLE, pickupEnable);
-}
-
 FLASHMEM boolean getBassEnhanceEnable() {
   byte eh = EEPROM.read(EEPROM_BASSENHANCE_ENABLE); 
   if (eh < 0 || eh > 1)return false; //If EEPROM has no bass enhance enable stored
