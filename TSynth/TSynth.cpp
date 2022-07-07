@@ -469,20 +469,23 @@ FLASHMEM void updateNoiseLevel(byte midiValue)
   }
 }
 
-FLASHMEM void updateFilterFreq(float value)
+FLASHMEM void updateFilterFreq(uint8_t midiValue)
 {
+    float value = FILTERFREQS256[midiValue * 2];
   groupvec[activeGroupIndex]->setCutoff(value);
   showCurrentParameterPage(F("Cutoff"), String(int(value)) + F(" Hz"));
 }
 
-FLASHMEM void updateFilterRes(float value)
+FLASHMEM void updateFilterRes(uint8_t midiValue)
 {
+    float value = FILTERRESONANCE[midiValue];
   groupvec[activeGroupIndex]->setResonance(value);
   showCurrentParameterPage(F("Resonance"), value);
 }
 
-FLASHMEM void updateFilterMixer(float value)
+FLASHMEM void updateFilterMixer(uint8_t midiValue)
 {
+    float value = LINEAR_FILTERMIXER[midiValue];
   groupvec[activeGroupIndex]->setFilterMixer(value);
 
   String filterStr;
@@ -606,8 +609,8 @@ FLASHMEM void updateFilterLfoAmt(uint8_t midiValue)
 
 FLASHMEM void updateFilterLFOWaveform(uint32_t waveform)
 {
-  groupvec[activeGroupIndex]->setFilterLfoWaveform(waveform);
-  showCurrentParameterPage(F("Filter LFO"), getWaveformStr(waveform));
+  groupvec[activeGroupIndex]->setFilterLfoWaveform(WAVEFORMS_LFO[waveform]);
+  showCurrentParameterPage(F("Filter LFO"), getWaveformStr(WAVEFORMS_LFO[waveform]));
 }
 
 FLASHMEM void updatePitchLFORetrig(uint8_t midiValue)
@@ -818,16 +821,16 @@ void myControlChange(byte channel, byte control, byte value)
 
   case CCfilterfreq:
     // MIDI is 7 bit, 128 values and needs to choose alternate filterfreqs(8 bit) by multiplying by 2
-    updateFilterFreq(FILTERFREQS256[value * 2]);
+    updateFilterFreq(value);
     break;
 
   case CCfilterres:
     // If <1.1 there is noise at high cutoff freq
-    updateFilterRes(FILTERRESONANCE[value]);
+    updateFilterRes(value);
     break;
 
   case CCfiltermixer:
-    updateFilterMixer(LINEAR_FILTERMIXER[value]);
+    updateFilterMixer(value);
     break;
 
   case CCfilterenv:
@@ -864,17 +867,15 @@ void myControlChange(byte channel, byte control, byte value)
     break;
 
   case CCfilterlforate:
-  {
     updateFilterLfoRate(value);
     break;
-  }
 
   case CCfilterlfoamt:
     updateFilterLfoAmt(value);
     break;
 
   case CCfilterlfowaveform:
-    updateFilterLFOWaveform(getLFOWaveform(value));
+    updateFilterLFOWaveform(value);
     break;
 
   case CCfilterlforetrig:
@@ -1176,9 +1177,9 @@ FLASHMEM void setCurrentPatchData(String data[])
     updatePWA(pwA, pwA);
     updatePWB(closest(LINEARCENTREZERO,  data[21].toFloat(), &patchMidiData.pWB),
               closest(LINEAR, data[18].toFloat(), &patchMidiData.pwmAmtB));
-    updateFilterRes(data[22].toFloat());
-    updateFilterFreq(data[23].toFloat());
-    updateFilterMixer(data[24].toFloat());
+    updateFilterRes(closest(FILTERRESONANCE, data[22].toFloat(), &patchMidiData.filterRes));
+    updateFilterFreq(patchMidiData.filterFreq = closest(FILTERFREQS256, (uint16_t)data[23].toFloat(), nullptr) / 2);
+    updateFilterMixer(closest(LINEAR_FILTERMIXER, data[24].toFloat(),&patchMidiData.filterMixer));
     updateFilterEnv(closest(LINEARCENTREZERO, data[25].toFloat()/ OSCMODMIXERMAX, &patchMidiData.filterEnv));
     updatePitchLFOAmt(closest(POWER, data[26].toFloat(), &patchMidiData.pitchLFOAmt));
 
@@ -1512,37 +1513,10 @@ void updateSection(byte encIndex, bool moveUp) {
         case Section::Filter:
             // "Cutoff", "Resonance", "Type", "Env"
             switch(encIndex) {
-                case 0:{
-                    auto newVal = cycleIndexOfSorted(FILTERFREQS256, (uint16_t) (groupvec[activeGroupIndex]->getCutoff()), moveUp, false);
-                    // array of 256 -> byte, have to move twice to divide later
-                    if(moveUp){
-                        if(newVal < 255)
-                            newVal++;
-                    }else {
-                        if(newVal > 0)
-                            newVal--;
-                    }
-                    newVal /= 2;
-                    midiCCOut(CCfilterfreq, newVal);
-                    myControlChange(midiChannel, CCfilterfreq, newVal);
-                    return;
-                }
-                case 1:{
-                    auto newVal = cycleIndexOfSorted(FILTERRESONANCE, groupvec[activeGroupIndex]->getResonance(), moveUp, false);
-                    midiCCOut(CCfilterres, newVal);
-                    myControlChange(midiChannel, CCfilterres, newVal);
-                    return;
-                }
-                case 2: {
-                    auto newVal = cycleIndexOfSorted(LINEAR_FILTERMIXER, groupvec[activeGroupIndex]->getFilterMixer(), moveUp, false);
-                    midiCCOut(CCfiltermixer, newVal);
-                    myControlChange(midiChannel, CCfiltermixer, newVal);
-                    return;
-                }
-                case 3: {
-                    cycleMidiIn(CCfilterenv, patchMidiData.filterEnv, delta, 128, true);
-                    return;
-                }
+                case 0:cycleMidiIn(CCfilterfreq, patchMidiData.filterFreq, delta, 128);return;
+                case 1:cycleMidiIn(CCfilterres, patchMidiData.filterRes, delta, FILTERRESONANCE);return;
+                case 2: cycleMidiIn(CCfiltermixer, patchMidiData.filterMixer, delta, LINEAR_FILTERMIXER);return;
+                case 3: cycleMidiIn(CCfilterenv, patchMidiData.filterEnv, delta, 128, true);return;
             }
             break;
         case Section::FilterLFO:
