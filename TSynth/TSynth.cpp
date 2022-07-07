@@ -576,18 +576,25 @@ FLASHMEM void updatePitchLFOMidiClkSync(uint8_t midiValue)
   showCurrentParameterPage(F("P. LFO Sync"), value ? F("On") : F("Off"));
 }
 
-FLASHMEM void updateFilterLfoRate(float value, String timeDivStr)
+FLASHMEM void updateFilterLfoRate(uint8_t midiValue)
 {
-  groupvec[activeGroupIndex]->setFilterLfoRate(value);
+    float rate;
+    String timeDivStr = "";
+    if (groupvec[activeGroupIndex]->getFilterLfoMidiClockSync())
+    {
+        lfoTempoValue = LFOTEMPO[midiValue];
+        rate = lfoSyncFreq * LFOTEMPO[midiValue];
+        timeDivStr = LFOTEMPOSTR[midiValue];
+        showCurrentParameterPage(F("LFO Time Div"), timeDivStr);
+    }
+    else
+    {
+        rate = LFOMAXRATE * POWER[midiValue];
+        showCurrentParameterPage(F("F. LFO Rate"), String(rate) + F(" Hz"));
+    }
 
-  if (timeDivStr.length() > 0)
-  {
-    showCurrentParameterPage(F("LFO Time Div"), timeDivStr);
-  }
-  else
-  {
-    showCurrentParameterPage(F("F. LFO Rate"), String(value) + F(" Hz"));
-  }
+  groupvec[activeGroupIndex]->setFilterLfoRate(rate);
+
 }
 
 FLASHMEM void updateFilterLfoAmt(uint8_t midiValue)
@@ -618,10 +625,10 @@ FLASHMEM void updateFilterLFORetrig(uint8_t midiValue)
 //  digitalWriteFast(RETRIG_LED, groupvec[activeGroupIndex]->getFilterLfoRetrig() ? HIGH : LOW); // LED
 }
 
-FLASHMEM void updateFilterLFOMidiClkSync(bool value)
+FLASHMEM void updateFilterLFOMidiClkSync(uint8_t value)
 {
-  groupvec[activeGroupIndex]->setFilterLfoMidiClockSync(value);
-  showCurrentParameterPage(F("Tempo Sync"), value ? F("On") : F("Off"));
+  groupvec[activeGroupIndex]->setFilterLfoMidiClockSync(value > 0);
+  showCurrentParameterPage(F("Tempo Sync"), value > 0 ? F("On") : F("Off"));
 //  digitalWriteFast(TEMPO_LED, value ? HIGH : LOW); // LED
 }
 
@@ -853,30 +860,17 @@ void myControlChange(byte channel, byte control, byte value)
     break;
 
   case CCfilterLFOMidiClkSync:
-    updateFilterLFOMidiClkSync(value > 0);
+    updateFilterLFOMidiClkSync(value);
     break;
 
   case CCfilterlforate:
   {
-    float rate;
-    String timeDivStr = "";
-    if (groupvec[activeGroupIndex]->getFilterLfoMidiClockSync())
-    {
-      lfoTempoValue = LFOTEMPO[value];
-      rate = lfoSyncFreq * LFOTEMPO[value];
-      timeDivStr = LFOTEMPOSTR[value];
-    }
-    else
-    {
-      rate = LFOMAXRATE * POWER[value];
-    }
-
-    updateFilterLfoRate(rate, timeDivStr);
+    updateFilterLfoRate(value);
     break;
   }
 
   case CCfilterlfoamt:
-    updateFilterLfoAmt(LINEAR[value] * FILTERMODMIXERMAX);
+    updateFilterLfoAmt(value);
     break;
 
   case CCfilterlfowaveform:
@@ -1108,7 +1102,7 @@ FLASHMEM void loadPatchMidiData(PatchMidiData data)
     updatePitchLFOWaveform(data.pitchLFOWaveform);
     updatePitchLFORetrig(data.pitchLFORetrig);
     updatePitchLFOMidiClkSync(data.pitchLFOMidiClkSync); // MIDI CC Only
-    updateFilterLfoRate(data.filterLfoRate, "");
+    updateFilterLfoRate(data.filterLfoRate);
     updateFilterLFORetrig(data.filterLFORetrig);
     updateFilterLFOMidiClkSync(data.filterLFOMidiClkSync);
     updateFilterLfoAmt(data.filterLfoAmt);
@@ -1189,9 +1183,9 @@ FLASHMEM void setCurrentPatchData(String data[])
     updatePitchLFOAmt(closest(POWER, data[26].toFloat(), &patchMidiData.pitchLFOAmt));
 
 
-    updatePitchLFOMidiClkSync(data[30].toInt()); // MIDI CC Only
+    updatePitchLFOMidiClkSync(patchMidiData.pitchLFOMidiClkSync = data[30].toInt()); // MIDI CC Only
     float rate = data[27].toFloat();
-    if (groupvec[activeGroupIndex]->getPitchLfoMidiClockSync())
+    if (patchMidiData.pitchLFOMidiClkSync)
         updatePitchLFORate(closest(LFOTEMPO, rate / lfoSyncFreq,&patchMidiData.pitchLFORate));
     else
         updatePitchLFORate(closest(POWER, rate / LFOMAXRATE, &patchMidiData.pitchLFORate));
@@ -1199,19 +1193,27 @@ FLASHMEM void setCurrentPatchData(String data[])
     updatePitchLFOWaveform(closest(WAVEFORMS_LFO, (uint8_t)data[28].toInt(), &patchMidiData.pitchLFOWaveform));
     dbgMsg = String(data[28].toInt()) + String(' ') + patchMidiData.pitchLFOWaveform;
     updatePitchLFORetrig(data[29].toInt());
-    updateFilterLfoRate(data[31].toFloat(), "");
-    updateFilterLFORetrig(data[32].toInt() > 0);
-    updateFilterLFOMidiClkSync(data[33].toInt() > 0);
-    updateFilterLfoAmt(data[34].toFloat());
-    updateFilterLFOWaveform(data[35].toFloat());
-    updateFilterAttack(closest(ENVTIMES,(uint16_t)data[36].toFloat(), &patchMidiData.filterAttack));
+
+    updateFilterLFOMidiClkSync(patchMidiData.filterLFOMidiClkSync = data[33].toInt());
+    rate = data[31].toFloat();
+    if (patchMidiData.filterLFOMidiClkSync)
+        updateFilterLfoRate(closest(LFOTEMPO, rate / lfoSyncFreq,&patchMidiData.filterLfoRate));
+    else
+        updateFilterLfoRate(closest(POWER, rate / LFOMAXRATE, &patchMidiData.filterLfoRate));
+    updateFilterLFORetrig(data[32].toInt());
+    updateFilterLfoAmt(closest(LINEAR, data[34].toFloat(), &patchMidiData.filterLfoAmt));
+    updateFilterLFOWaveform(closest(WAVEFORMS_LFO, (uint8_t)data[35].toFloat(), &patchMidiData.filterLFOWaveform));
+
+   updateFilterAttack(closest(ENVTIMES,(uint16_t)data[36].toFloat(), &patchMidiData.filterAttack));
     updateFilterDecay(closest(ENVTIMES,(uint16_t)data[37].toFloat(), &patchMidiData.filterDecay));
     updateFilterSustain(closest(LINEAR,data[38].toFloat(), &patchMidiData.filterSustain));
     updateFilterRelease(closest(ENVTIMES,(uint16_t)data[39].toFloat(), &patchMidiData.filterRelease));
+
     updateAttack(closest(ENVTIMES,(uint16_t)data[40].toFloat(), &patchMidiData.attack));
     updateDecay(closest(ENVTIMES,(uint16_t)data[41].toFloat(), &patchMidiData.decay));
     updateSustain(closest(LINEAR,data[42].toFloat(), &patchMidiData.sustain));
     updateRelease(closest(ENVTIMES,(uint16_t)data[43].toFloat(), &patchMidiData.release));
+
     updateEffectAmt(closest(ENSEMBLE_LFO, data[44].toFloat(), &patchMidiData.effectAmt));
     updateEffectMix(closest(LINEAR, data[45].toFloat(), &patchMidiData.effectMix));
     updatePitchEnv(closest(LINEARCENTREZERO, data[46].toFloat() / OSCMODMIXERMAX, &patchMidiData.pitchEnv));
@@ -1491,7 +1493,6 @@ void updateSection(byte encIndex, bool moveUp) {
                 case 1:cycleMidiIn(CCoscLfoWaveform, patchMidiData.pitchLFOWaveform, sign, WAVEFORMS_LFO, true);return;
                 case 2: cycleMidiIn(CCoscLfoRate, patchMidiData.pitchLFORate, delta, 128, true);return;
                 case 3:
-
                     if(moveUp) // tempo
                         cycleMidiIn(CCunison, patchMidiData.unison, sign, 3);
                     else // retrig
@@ -1547,36 +1548,9 @@ void updateSection(byte encIndex, bool moveUp) {
         case Section::FilterLFO:
             // "Level", "Waveform", "Rate", "Retrig/Tempo"
             switch(encIndex) {
-                case 0:{
-                    float value = groupvec[activeGroupIndex]->getFilterLfoAmt();
-                    byte mux1Read = cycleIndexOfSorted(LINEAR,
-                                                       value, moveUp, false);
-                    midiCCOut(CCfilterlfoamt, mux1Read);
-                    myControlChange(midiChannel, CCfilterlfoamt, mux1Read);
-                    return;
-                }
-                case 1:{
-                    auto newVal = cycleIndexOf(WAVEFORMS_LFO, (uint8_t) groupvec[activeGroupIndex]->getFilterLfoWaveform(), moveUp);
-                    midiCCOut(CCfilterlfowaveform, WAVEFORMS_LFO_MIDI[newVal]);
-                    myControlChange(midiChannel, CCfilterlfowaveform, WAVEFORMS_LFO_MIDI[newVal]);
-                    return;
-                }
-                case 2: {
-                    byte newVal = 0;
-                    if (groupvec[activeGroupIndex]->getFilterLfoMidiClockSync())
-                    {
-                        newVal = cycleIndexOfSorted(LFOTEMPO,
-                                                    groupvec[activeGroupIndex]->getFilterLfoRate() / lfoSyncFreq, moveUp, false);
-                    }
-                    else
-                    {
-                        newVal = cycleIndexOfSorted(POWER,
-                                                    groupvec[activeGroupIndex]->getFilterLfoRate() / LFOMAXRATE, moveUp, false);
-                    }
-                    midiCCOut(CCfilterlforate, newVal);
-                    myControlChange(midiChannel, CCfilterlforate, newVal);
-                    return;
-                }
+                case 0:cycleMidiIn(CCfilterlfoamt, patchMidiData.filterLfoAmt, delta, LINEAR, true);return;
+                case 1:cycleMidiIn(CCfilterlfowaveform, patchMidiData.filterLFOWaveform, sign, WAVEFORMS_LFO, true);return;
+                case 2: cycleMidiIn(CCfilterlforate, patchMidiData.filterLfoRate, delta, 128, true);return;
                 case 3: {
                     if(moveUp) // tempo
                         cycleMidiIn(CCfilterLFOMidiClkSync, patchMidiData.filterLFOMidiClkSync, 1, 2);
