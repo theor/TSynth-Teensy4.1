@@ -242,9 +242,9 @@ FLASHMEM void updateWaveformA(uint8_t waveform)
   showCurrentParameterPage(F("1. Waveform"), getWaveformStr(WAVEFORMS_A[waveform]));
 }
 
-FLASHMEM void updateWaveformB(uint32_t waveform)
+FLASHMEM void updateWaveformB(uint8_t waveform)
 {
-  groupvec[activeGroupIndex]->setWaveformB(waveform);
+  groupvec[activeGroupIndex]->setWaveformB(WAVEFORMS_B[waveform]);
   showCurrentParameterPage(F("2. Waveform"), getWaveformStr(waveform));
 }
 
@@ -256,8 +256,9 @@ FLASHMEM void updatePitchA(uint8_t pitchMidi)
   showCurrentParameterPage("1. Semitones", (pitch > 0 ? "+" : "") + String(pitch));
 }
 
-FLASHMEM void updatePitchB(int pitch)
+FLASHMEM void updatePitchB(uint8_t pitchMidi)
 {
+    int pitch = PITCH[pitchMidi];
   groupvec[activeGroupIndex]->params().oscPitchB = pitch;
   groupvec[activeGroupIndex]->updateVoices();
   showCurrentParameterPage(F("2. Semitones"), (pitch > 0 ? "+" : "") + String(pitch));
@@ -293,8 +294,9 @@ FLASHMEM void updatePWMSource(uint8_t source)
   }
 }
 
-FLASHMEM void updatePWMRate(float value)
+FLASHMEM void updatePWMRate(uint8_t midiValue)
 {
+  float value = PWMRATE[midiValue];
   groupvec[activeGroupIndex]->setPwmRate(value);
 
   if (value == PWMRATE_PW_MODE)
@@ -320,8 +322,10 @@ FLASHMEM void updatePWMAmount(float value)
   showCurrentParameterPage(F("PWM Amt"), String(value) + F(" : ") + String(value));
 }
 
-FLASHMEM void updatePWA(float valuePwA, float valuePwmAmtA)
+FLASHMEM void updatePWA(uint8_t valuePwAMidi, uint8_t valuePwmAmtAMidi)
 {
+  float valuePwA = LINEARCENTREZERO[valuePwAMidi];
+  float valuePwmAmtA = LINEAR[valuePwmAmtAMidi];
   groupvec[activeGroupIndex]->setPWA(valuePwA, valuePwmAmtA);
 
   if (groupvec[activeGroupIndex]->getPwmRate() == PWMRATE_PW_MODE)
@@ -350,8 +354,10 @@ FLASHMEM void updatePWA(float valuePwA, float valuePwmAmtA)
   }
 }
 
-FLASHMEM void updatePWB(float valuePwB, float valuePwmAmtB)
+FLASHMEM void updatePWB(uint8_t valuePwBMidi, uint8_t valuePwmAmtBMidi)
 {
+    float valuePwB = LINEARCENTREZERO[valuePwBMidi];
+    float valuePwmAmtB = LINEAR[valuePwmAmtBMidi];
   groupvec[activeGroupIndex]->setPWB(valuePwB, valuePwmAmtB);
 
   if (groupvec[activeGroupIndex]->getPwmRate() == PWMRATE_PW_MODE)
@@ -731,7 +737,7 @@ void myControlChange(byte channel, byte control, byte value)
 
   case CCpwmRate:
     // Uses combination of PWMRate, PWa and PWb
-    updatePWMRate(PWMRATE[value]);
+    updatePWMRate(value);
     break;
 
   case CCpwmAmt:
@@ -741,11 +747,11 @@ void myControlChange(byte channel, byte control, byte value)
     break;
 
   case CCpwA:
-    updatePWA(LINEARCENTREZERO[value], LINEAR[value]);
+    updatePWA(value, value);
     break;
 
   case CCpwB:
-    updatePWB(LINEARCENTREZERO[value], LINEAR[value]);
+    updatePWB(value, value);
     break;
 
   case CCoscLevelA:
@@ -1045,7 +1051,7 @@ FLASHMEM String getPatchData(PatchMidiData data)
     String(data.waveformB) + F(",") +
 
     String(data.pWMSource) + F(",") +
-    String(data.pwmAmtA) + F(",") +
+    /*String(data.pwmAmtA) +*/ F(",") +
     String(data.pwmAmtB) + F(",") +
     String(data.pWMRate) + F(",") +
     String(data.pWA) + F(",") +
@@ -1102,8 +1108,8 @@ FLASHMEM void loadPatchMidiData(PatchMidiData data)
     updateWaveformA(data.waveformA);
     updateWaveformB(data.waveformB);
     updatePWMSource(data.pWMSource);
-    updatePWA(data.pWA, data.pwmAmtA);
-    updatePWB(data.pWB, data.pwmAmtB);
+    updatePWA(data.pWA, data.pWA);
+    updatePWB(data.pWB, data.pWB);
     updatePWMRate(data.pWMRate);
     updateFilterRes(data.filterRes);
     resonancePrevValue =data.filterRes; // Pick-up
@@ -1155,7 +1161,7 @@ FLASHMEM void setCurrentPatchData(String data[])
     updateOscLevelB(data[2].toFloat());
     updateNoiseLevel(data[3].toFloat());
     updateUnison(data[4].toInt());
-    updateOscFX(data[5].toInt());
+    updateOscFX(patchMidiData.oscFX = (uint8_t)data[5].toInt());
     updateDetune(data[6].toFloat(), data[48].toInt());
     // Why is this MIDI Clock stuff part of the patch??
     lfoSyncFreq = data[7].toInt();
@@ -1165,14 +1171,19 @@ FLASHMEM void setCurrentPatchData(String data[])
     updateGlide(data[11].toFloat());
 
     updatePitchA(closest(PITCH, (int8_t)data[12].toInt(), &patchMidiData.pitchA));
-//    dbgMsg = String(data[12].toInt()) + String(' ') + closest(PITCH, (int8_t)data[12].toInt());
-    updatePitchB(data[13].toFloat());
+//    dbgMsg = String(data[12].toInt()) + String(' ') + patchMidiData.pitchA;
+    updatePitchB(closest(PITCH, (int8_t)data[13].toInt(), &patchMidiData.pitchB));
     updateWaveformA(closest(WAVEFORMS_A, (uint8_t)data[14].toInt(), &patchMidiData.waveformA));
-    updateWaveformB(data[15].toInt());
+    updateWaveformB(closest(WAVEFORMS_B,(uint8_t)data[15].toInt(), &patchMidiData.waveformB));
     updatePWMSource(data[16].toInt());
-    updatePWA(data[20].toFloat(), data[17].toFloat());
-    updatePWB(data[21].toFloat(), data[18].toFloat());
-    updatePWMRate(data[19].toFloat());
+    updatePWMRate(closest(PWMRATE, data[19].toFloat(), &patchMidiData.pWMRate));
+    auto pwA = patchMidiData.pWMRate == PWMRATE_PW_MODE
+               ? closest(LINEARCENTREZERO,  data[20].toFloat(), &patchMidiData.pWA)
+               : closest(LINEAR, data[17].toFloat(), &patchMidiData.pWA);
+    updatePWA(pwA, pwA);
+    dbgMsg = String(data[20].toFloat()) + String(' ') + patchMidiData.pWA;
+    updatePWB(closest(LINEARCENTREZERO,  data[21].toFloat(), &patchMidiData.pWB),
+              closest(LINEAR, data[18].toFloat(), &patchMidiData.pwmAmtB));
     updateFilterRes(data[22].toFloat());
     resonancePrevValue = data[22].toFloat(); // Pick-up
     updateFilterFreq(data[23].toFloat());
@@ -1439,10 +1450,14 @@ void sendSysex(String ss) {
     usbMIDI.sendSysEx(ss.length(), reinterpret_cast<const uint8_t *>(ss.c_str()), false);
 }
 
-byte cycleMidi(byte cc, byte& b, int delta, int max = 128) {
+byte cycleMidiIn(byte cc, byte& b, int delta, size_t N, bool clamp = false) {
     int v = (int)b + delta;
-    while(v < 0) v += max;
-    while(v >= max) v -= max;
+    if(clamp) {
+        v = v < 0 ? 0 : v >= (long)N ? (long)(N-1) : v;
+    } else {
+        while (v < 0) v += N;
+        while (v >= (long) N) v -= N;
+    }
     b = (byte)v;
 
     midiCCOut(cc, b);
@@ -1451,19 +1466,13 @@ byte cycleMidi(byte cc, byte& b, int delta, int max = 128) {
 }
 
 template<typename T, size_t  N>
-byte cycleMidiIn(byte cc, byte& b, int delta, const T(&array)[N]) {
-    int v = (int)b + delta;
-    while(v < 0) v += N;
-    while(v >= (long)N) v -= N;
-    b = (byte)v;
-
-    midiCCOut(cc, b);
-    myControlChange(midiChannel, cc, b);
-    return b;
+byte cycleMidiIn(byte cc, byte& b, int delta, const T(&array)[N], bool clamp = false) {
+    return cycleMidiIn(cc, b, delta, N, clamp);
 }
 
 void updateSection(byte encIndex, bool moveUp) {
-    int delta = (moveUp ? 1 : -1) * (sectionSwitch.held() ? /*1*/0 : 1);
+    int sign = moveUp ? 1 : -1;
+    int delta = sign * (sectionSwitch.pressed() ? (dbgMode != 0 ? 0 : 10) : 1);
     switch(section) {
         case Section::Osc1:
             switch(encIndex) {
@@ -1476,9 +1485,7 @@ void updateSection(byte encIndex, bool moveUp) {
                     return;
                 }
                 case 2: {
-                    auto idx = cycleIndexOf(LINEARCENTREZERO, groupvec[activeGroupIndex]->getPwA(), moveUp);
-                    midiCCOut(CCpwA, LINEARCENTREZERO[idx]);
-                    updatePWA(LINEARCENTREZERO[idx], LINEAR[idx]);
+                    cycleMidiIn(CCpwA, patchMidiData.pWA, delta, LINEARCENTREZERO);
                     return;
                 }
                 case 3: /*OSC MIX*/ {
@@ -1504,23 +1511,18 @@ void updateSection(byte encIndex, bool moveUp) {
         case Section::Osc2:
             switch(encIndex) {
                 case 0:{
-                    auto newVal = cycleIndexOf(PITCH, (int8_t) groupvec[activeGroupIndex]->params().oscPitchB, moveUp);
-                    midiCCOut(CCpitchB, newVal);
-                    myControlChange(midiChannel, CCpitchB, newVal);
+                    cycleMidiIn(CCpitchB, patchMidiData.pitchB, delta, PITCH);
                     return;
                 }
                 case 1:{
-                    auto newVal = cycleIndexOf(WAVEFORMS_B, (uint8_t) groupvec[activeGroupIndex]->getWaveformB(), moveUp);
-                    midiCCOut(CCoscwaveformB, WAVEFORMS_B[newVal]);
-                    updateWaveformB(WAVEFORMS_B[newVal]);
+                    cycleMidiIn(CCoscwaveformB, patchMidiData.waveformB, delta, WAVEFORMS_B);
                     return;
                 }
                 case 2: {
-                    auto idx = cycleIndexOf(LINEARCENTREZERO, groupvec[activeGroupIndex]->getPwB(), moveUp);
-                    midiCCOut(CCpwB, LINEARCENTREZERO[idx]);
-                    updatePWB(LINEARCENTREZERO[idx], LINEAR[idx]);
+                    cycleMidiIn(CCpwB, patchMidiData.pWB, delta, LINEARCENTREZERO);
                     return;
                 }
+
                     // todo check. chord detune is an enum (unison 2 ?), detune (unison 1?) is a percent. pick a unit for each.
                 case 3: /*detune*/ {
                     byte mux1Read = cycleByte((uint8_t)groupvec[activeGroupIndex]->params().chordDetune, moveUp, false);
@@ -1555,17 +1557,11 @@ void updateSection(byte encIndex, bool moveUp) {
                     return;
                 }
                 case 2: {
-                    float value = groupvec[activeGroupIndex]->getPwmRate();
-                    byte mux1Read = cycleIndexOfSorted(PWMRATE,
-                                                       value, moveUp, false);
-                    midiCCOut(CCpwmRate, mux1Read);
-                    myControlChange(midiChannel, CCpwmRate, mux1Read);
+                    cycleMidiIn(CCpwmRate, patchMidiData.pWMRate, delta, PWMRATE, true);
                     return;
                 }
                 case 3: {
-                    byte value = (groupvec[activeGroupIndex]->getOscFX() + 3 + (moveUp ? 1 : -1)) % 3;
-                    midiCCOut(CCoscfx, value);
-                    myControlChange(midiChannel, CCoscfx, value);
+                    cycleMidiIn(CCoscfx, patchMidiData.oscFX, sign, 3);
                     return;
                 }
             }

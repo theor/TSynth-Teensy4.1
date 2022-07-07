@@ -46,7 +46,7 @@ extern const int16_t PROGMEM PPG_WAVE[256];
 extern const float PROGMEM AWFREQ;
 extern const float PROGMEM PWMRATE_PW_MODE;
 extern const float PROGMEM PWMRATE_SOURCE_FILTER_ENV;
-extern const float PROGMEM PWMRATE[128];
+extern const float PROGMEM PWMRATE[123];
 extern const float PROGMEM PITCHLFOOCTAVERANGE;
 extern const uint8_t PROGMEM MINUNISONVOICES;
 extern const float PROGMEM LFOMAXRATE;

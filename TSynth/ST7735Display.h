@@ -60,19 +60,7 @@ const uint32_t TS_DARKBLUE = Color565(29, 53, 87);
 uint32_t colourPriority[5] = {ST7735_BLACK, TS_PALEBLUE, TS_BLUE, ST77XX_ORANGE, TS_RED};
 // f1faee a8dadc 457b9d 1d3557
 // green 06d6a0
-enum class Section {
-//    None,
-    Osc1,
-    Osc2,
-    Noise,
-    LFO,
-    FilterEnvelope,
-    Filter,
-    FilterLFO,
-    Amp,
-    FX
-};
-Section section = Section::Osc1;
+Section section = getCurrentSection();
 
 void prevSection() {
     switch(section) {
@@ -107,6 +95,7 @@ void prevSection() {
 //            section = Section::FX;
 //            break;
     }
+    storeCurrentSection(section);
 }
 
 void nextSection() {
@@ -142,6 +131,7 @@ void nextSection() {
             section = Section::Osc1;
             break;
     }
+    storeCurrentSection(section);
 }
 const __FlashStringHelper* printSection() {
     switch(section){

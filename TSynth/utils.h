@@ -46,9 +46,25 @@ size_t closest(const T(&array)[N] , T value, uint8_t* patchParam) {
     T minDelta = std::numeric_limits<T>::max();;
     size_t minIndex = 0;
     for (size_t i = 0; i < N; ++i) {
-        if (value == array[i])
-            return i;
         T delta = std::abs(array[i] - value);
+        if(delta < minDelta) {
+            minDelta = delta;
+            minIndex = i;
+        }
+    }
+    if(patchParam)
+        *patchParam = (uint8_t)minIndex;
+    return minIndex;
+}
+
+template<size_t  N>
+size_t closest(const float(&array)[N] , float value, uint8_t* patchParam) {
+    float minDelta = std::numeric_limits<float>::max();;
+    size_t minIndex = 0;
+    for (size_t i = 0; i < N; ++i) {
+        float delta = array[i] - value;
+        if(delta < 0)
+            delta = -delta;
         if(delta < minDelta) {
             minDelta = delta;
             minIndex = i;

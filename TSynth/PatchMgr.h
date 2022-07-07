@@ -29,7 +29,6 @@ struct PatchMidiData {
     uint8_t pWA; // 17
     uint8_t pWB; // 18
     uint8_t pWMRate; // 19
-    uint8_t pwmAmtA; // 20
     uint8_t pwmAmtB; // 21
     uint8_t filterRes; // 22
     uint8_t filterFreq; // 23
@@ -150,7 +149,7 @@ FLASHMEM void recallPatchMidiData(File patchFile, PatchMidiData* data){
                 case 17: data-> pWA = value; break;
                 case 18: data-> pWB = value; break;
                 case 19: data-> pWMRate = value; break;
-                case 20: data-> pwmAmtA = value; break;
+                case 20: /*data-> pwmAmtA = value;*/ break;
                 case 21: data-> pwmAmtB = value; break;
                 case 22: data-> filterRes = value; break;
                 case 23: data-> filterFreq = value; break;

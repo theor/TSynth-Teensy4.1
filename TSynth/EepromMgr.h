@@ -13,6 +13,25 @@
 #define EEPROM_AMP_ENV 10
 #define EEPROM_FILT_ENV 11
 #define EEPROM_GLIDE_SHAPE 12
+#define EEPROM_CURRENT_SECTION 13
+
+
+enum class Section {
+//    None,
+    Osc1,
+    Osc2,
+    Noise,
+    LFO,
+    FilterEnvelope,
+    Filter,
+    FilterLFO,
+    Amp,
+    FX
+};
+
+FLASHMEM void storeCurrentSection(Section section){
+  EEPROM.update(EEPROM_CURRENT_SECTION, (uint8_t)section);
+}
 
 FLASHMEM void storeGlideShape(byte type){
   EEPROM.update(EEPROM_GLIDE_SHAPE, type);
@@ -24,6 +43,12 @@ FLASHMEM void storeAmpEnv(byte type){
 
 FLASHMEM void storeFiltEnv(byte type){
   EEPROM.update(EEPROM_FILT_ENV, type);
+}
+
+FLASHMEM Section getCurrentSection() {
+  uint8_t gs = (uint8_t)EEPROM.read(EEPROM_CURRENT_SECTION);
+  if (gs < 0 || gs > (int)Section::FX) gs = 0;//If EEPROM has no glide shape (Exp type)
+  return (Section)gs;
 }
 
 FLASHMEM int8_t getGlideShape() {
