@@ -10,8 +10,9 @@
 
 struct PatchMidiData {
     String name; // 0
-    uint8_t oscLevelA; // 1
-    uint8_t oscLevelB; // 2
+    uint8_t oscMix; // 1
+//    uint8_t oscLevelA; // 1
+//    uint8_t oscLevelB; // 2
     uint8_t noiseLevel; // 3
     uint8_t unison; // 4
     uint8_t oscFX; // 5
@@ -130,8 +131,8 @@ FLASHMEM void recallPatchMidiData(File patchFile, PatchMidiData* data){
             uint8_t value = (uint8_t) (String(str).toInt());
 
             switch (i) {
-                case 1: data-> oscLevelA = value; break;
-                case 2: data-> oscLevelB = value; break;
+                case 1: data-> oscMix = value; break;
+                case 2: /*data-> oscLevelB = value;*/ break;
                 case 3: data-> noiseLevel = value; break;
                 case 4: data-> unison = value; break;
                 case 5: data-> oscFX = value; break;

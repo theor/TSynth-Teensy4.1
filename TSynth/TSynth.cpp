@@ -386,9 +386,11 @@ FLASHMEM void updatePWB(uint8_t valuePwBMidi, uint8_t valuePwmAmtBMidi)
   }
 }
 
-FLASHMEM void updateOscLevelA(float value)
+FLASHMEM void updateOscLevelA(uint8_t midiValue)
 {
-  groupvec[activeGroupIndex]->setOscLevelA(value);
+    float value = LINEAR[OSCMIXA[midiValue]];
+
+    groupvec[activeGroupIndex]->setOscLevelA(value);
 
   switch (groupvec[activeGroupIndex]->getOscFX())
   {
@@ -408,8 +410,9 @@ FLASHMEM void updateOscLevelA(float value)
   }
 }
 
-FLASHMEM void updateOscLevelB(float value)
+FLASHMEM void updateOscLevelB(uint8_t midiValue)
 {
+    float value = LINEAR[OSCMIXB[midiValue]];
   groupvec[activeGroupIndex]->setOscLevelB(value);
 
   switch (groupvec[activeGroupIndex]->getOscFX())
@@ -429,7 +432,10 @@ FLASHMEM void updateOscLevelB(float value)
     break;
   }
 }
-
+FLASHMEM void updateOscMix(uint8_t midiValue) {
+    updateOscLevelA(midiValue);
+    updateOscLevelB(midiValue);
+}
 FLASHMEM void updateNoiseLevel(float value)
 {
   float pink = 0.0;
@@ -755,11 +761,15 @@ void myControlChange(byte channel, byte control, byte value)
     break;
 
   case CCoscLevelA:
-    updateOscLevelA(LINEAR[value]);
+    updateOscLevelA(value);
     break;
 
   case CCoscLevelB:
-    updateOscLevelB(LINEAR[value]);
+    updateOscLevelB(value);
+    break;
+
+  case CCoscMix:
+    updateOscMix(value);
     break;
 
   case CCnoiseLevel:
@@ -1034,8 +1044,8 @@ FLASHMEM void reinitialiseToPanel()
 FLASHMEM String getPatchData(PatchMidiData data)
 {
     return patchName + F(",") +
-    String(data.oscLevelA) + F(",") +
-    String(data.oscLevelB) + F(",") +
+    String(data.oscMix) + F(",") +
+    /*String(data.oscLevelB) +*/ F(",") +
     String(data.noiseLevel) + F(",") +
     String(data.unison) + F(",") +
     String(data.oscFX) + F(",") +
@@ -1092,8 +1102,8 @@ FLASHMEM String getPatchData(PatchMidiData data)
 FLASHMEM void loadPatchMidiData(PatchMidiData data)
 {
     updatePatch(data.name, patchNo);
-    updateOscLevelA(data.oscLevelA);
-    updateOscLevelB(data.oscLevelB);
+    updateOscMix(data.oscMix);
+//    updateOscLevelB(data.oscLevelB);
     updateNoiseLevel(data.noiseLevel);
     updateUnison(data.unison);
     updateOscFX(data.oscFX);
@@ -1154,11 +1164,30 @@ FLASHMEM void loadPatchMidiData(PatchMidiData data)
     Serial.println(data.name);
 }
 
+uint8_t fromMix(float mixA, float mixB)
+{
+    size_t closestIndex = 0;
+    float minError = 50;
+    for (size_t i = 0; i < 128; i++) {
+        float la = LINEAR[OSCMIXA[i]] - mixA;
+        float lb = LINEAR[OSCMIXB[i]] - mixB;
+        float error = la*la + lb*lb;
+
+        if (error < minError) {
+            closestIndex = i;
+            minError = error;
+        }
+    }
+    return closestIndex;
+}
+
 FLASHMEM void setCurrentPatchData(String data[])
 {
     updatePatch(data[0], patchNo, data[50].toInt());
-    updateOscLevelA(data[1].toFloat());
-    updateOscLevelB(data[2].toFloat());
+    updateOscMix(patchMidiData.oscMix = fromMix(data[1].toFloat(), data[2].toFloat()));
+//    dbgMsg = String(data[1].toFloat()) + String(' ') + data[2].toFloat() + String(' ') + patchMidiData.oscMix;
+//    updateOscLevelA(data[1].toFloat());
+//    updateOscLevelB(data[2].toFloat());
     updateNoiseLevel(data[3].toFloat());
     updateUnison(data[4].toInt());
     updateOscFX(patchMidiData.oscFX = (uint8_t)data[5].toInt());
@@ -1181,7 +1210,6 @@ FLASHMEM void setCurrentPatchData(String data[])
                ? closest(LINEARCENTREZERO,  data[20].toFloat(), &patchMidiData.pWA)
                : closest(LINEAR, data[17].toFloat(), &patchMidiData.pWA);
     updatePWA(pwA, pwA);
-    dbgMsg = String(data[20].toFloat()) + String(' ') + patchMidiData.pWA;
     updatePWB(closest(LINEARCENTREZERO,  data[21].toFloat(), &patchMidiData.pWB),
               closest(LINEAR, data[18].toFloat(), &patchMidiData.pwmAmtB));
     updateFilterRes(data[22].toFloat());
@@ -1434,18 +1462,6 @@ void checkSwitches()
   }
 }
 
-uint8_t fromMix(float mixA, float mixB)
-{
-    for (size_t i = 0; i < 128; i++)
-    {
-        if (LINEAR[OSCMIXA[i]] == mixA && LINEAR[OSCMIXB[i]] == mixB)
-        {
-            return i;
-        }
-    }
-    return 0;
-}
-
 void sendSysex(String ss) {
     usbMIDI.sendSysEx(ss.length(), reinterpret_cast<const uint8_t *>(ss.c_str()), false);
 }
@@ -1489,21 +1505,7 @@ void updateSection(byte encIndex, bool moveUp) {
                     return;
                 }
                 case 3: /*OSC MIX*/ {
-                    // 77 -> oscmixa 100 -> 0.787
-                    // 0.787 -> indexof linear = 100 -> indexof oscmixa 77
-                    // LINEAR[OSCMIXA[midibyte]]
-
-                    auto midiValue = fromMix(groupvec[activeGroupIndex]->getOscLevelA(), groupvec[activeGroupIndex]->getOscLevelB());
-                    const uint8_t DELTA = 8;
-                    if(moveUp) {
-                        midiValue += min(DELTA, 128 - midiValue);
-                    } else {
-                        midiValue -= min(DELTA, midiValue);
-                    }
-                    midiCCOut(CCoscLevelA, midiValue);
-                    midiCCOut(CCoscLevelB, midiValue);
-                    updateOscLevelA(LINEAR[OSCMIXA[midiValue]]);
-                    updateOscLevelB(LINEAR[OSCMIXB[midiValue]]);
+                    cycleMidiIn(CCoscMix, patchMidiData.oscMix, delta, 128, true);
                     return;
                 }
             }

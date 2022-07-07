@@ -10,6 +10,7 @@
 #define   CCfiltermixer 19
 #define   CCoscLevelA 20
 #define   CCoscLevelB 21
+#define   CCoscMix 22
 #define   CCnoiseLevel  23
 #define   CCoscfx 24//Off/On
 #define   CCpitchA 26
