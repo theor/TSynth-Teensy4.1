@@ -606,50 +606,58 @@ FLASHMEM void updateFilterLFOMidiClkSync(bool value)
 //  digitalWriteFast(TEMPO_LED, value ? HIGH : LOW); // LED
 }
 
-FLASHMEM void updateFilterAttack(float value)
+FLASHMEM void updateFilterAttack(uint8_t midiValue)
 {
+    float value = ENVTIMES[midiValue];
   groupvec[activeGroupIndex]->setFilterAttack(value);
   showCurrentParameterPage(F("Filter Attack"), milliToString(value), FILTER_ENV);
 }
 
-FLASHMEM void updateFilterDecay(float value)
+FLASHMEM void updateFilterDecay(uint8_t midiValue)
 {
+    float value = ENVTIMES[midiValue];
   groupvec[activeGroupIndex]->setFilterDecay(value);
   showCurrentParameterPage("Filter Decay", milliToString(value), FILTER_ENV);
 }
 
-FLASHMEM void updateFilterSustain(float value)
+FLASHMEM void updateFilterSustain(uint8_t midiValue)
 {
+    float value = LINEAR[midiValue];
   groupvec[activeGroupIndex]->setFilterSustain(value);
   showCurrentParameterPage(F("Filter Sustain"), String(value), FILTER_ENV);
 }
 
-FLASHMEM void updateFilterRelease(float value)
+FLASHMEM void updateFilterRelease(uint8_t midiValue)
 {
+    float value = ENVTIMES[midiValue];
   groupvec[activeGroupIndex]->setFilterRelease(value);
   showCurrentParameterPage(F("Filter Release"), milliToString(value), FILTER_ENV);
 }
 
-FLASHMEM void updateAttack(float value)
+FLASHMEM void updateAttack(uint8_t midiValue)
 {
+    float value = ENVTIMES[midiValue];
   groupvec[activeGroupIndex]->setAmpAttack(value);
   showCurrentParameterPage(F("Attack"), milliToString(value), AMP_ENV);
 }
 
-FLASHMEM void updateDecay(float value)
+FLASHMEM void updateDecay(uint8_t midiValue)
 {
+    float value = ENVTIMES[midiValue];
   groupvec[activeGroupIndex]->setAmpDecay(value);
   showCurrentParameterPage(F("Decay"), milliToString(value), AMP_ENV);
 }
 
-FLASHMEM void updateSustain(float value)
+FLASHMEM void updateSustain(uint8_t midiValue)
 {
+    float value = LINEAR[midiValue];
   groupvec[activeGroupIndex]->setAmpSustain(value);
   showCurrentParameterPage(F("Sustain"), String(value), AMP_ENV);
 }
 
-FLASHMEM void updateRelease(float value)
+FLASHMEM void updateRelease(uint8_t midiValue)
 {
+    float value = ENVTIMES[midiValue];
   groupvec[activeGroupIndex]->setAmpRelease(value);
   showCurrentParameterPage(F("Release"), milliToString(value), AMP_ENV);
 }
@@ -913,35 +921,35 @@ void myControlChange(byte channel, byte control, byte value)
     break;
 
   case CCfilterattack:
-    updateFilterAttack(ENVTIMES[value]);
+    updateFilterAttack(value);
     break;
 
   case CCfilterdecay:
-    updateFilterDecay(ENVTIMES[value]);
+    updateFilterDecay(value);
     break;
 
   case CCfiltersustain:
-    updateFilterSustain(LINEAR[value]);
+    updateFilterSustain(value);
     break;
 
   case CCfilterrelease:
-    updateFilterRelease(ENVTIMES[value]);
+    updateFilterRelease(value);
     break;
 
   case CCampattack:
-    updateAttack(ENVTIMES[value]);
+    updateAttack(value);
     break;
 
   case CCampdecay:
-    updateDecay(ENVTIMES[value]);
+    updateDecay(value);
     break;
 
   case CCampsustain:
-    updateSustain(LINEAR[value]);
+    updateSustain(value);
     break;
 
   case CCamprelease:
-    updateRelease(ENVTIMES[value]);
+    updateRelease(value);
     break;
 
   case CCoscfx:
@@ -1239,14 +1247,14 @@ FLASHMEM void setCurrentPatchData(String data[])
     updateFilterLfoAmt(data[34].toFloat());
     filterLfoAmtPrevValue = data[34].toFloat(); // PICK-UP
     updateFilterLFOWaveform(data[35].toFloat());
-    updateFilterAttack(data[36].toFloat());
-    updateFilterDecay(data[37].toFloat());
-    updateFilterSustain(data[38].toFloat());
-    updateFilterRelease(data[39].toFloat());
-    updateAttack(data[40].toFloat());
-    updateDecay(data[41].toFloat());
-    updateSustain(data[42].toFloat());
-    updateRelease(data[43].toFloat());
+    updateFilterAttack(closest(ENVTIMES,(uint16_t)data[36].toFloat(), &patchMidiData.filterAttack));
+    updateFilterDecay(closest(ENVTIMES,(uint16_t)data[37].toFloat(), &patchMidiData.filterDecay));
+    updateFilterSustain(closest(LINEAR,data[38].toFloat(), &patchMidiData.filterSustain));
+    updateFilterRelease(closest(ENVTIMES,(uint16_t)data[39].toFloat(), &patchMidiData.filterRelease));
+    updateAttack(closest(ENVTIMES,(uint16_t)data[40].toFloat(), &patchMidiData.attack));
+    updateDecay(closest(ENVTIMES,(uint16_t)data[41].toFloat(), &patchMidiData.decay));
+    updateSustain(closest(LINEAR,data[42].toFloat(), &patchMidiData.sustain));
+    updateRelease(closest(ENVTIMES,(uint16_t)data[43].toFloat(), &patchMidiData.release));
     updateEffectAmt(data[44].toFloat());
     fxAmtPrevValue = data[44].toFloat(); // PICK-UP
     updateEffectMix(data[45].toFloat());
@@ -1498,64 +1506,27 @@ void updateSection(byte encIndex, bool moveUp) {
     switch(section) {
         case Section::Osc1:
             switch(encIndex) {
-                case 0:{
-                    cycleMidiIn(CCpitchA, patchMidiData.pitchA, delta, PITCH);
-                    return;
-                }
-                case 1:{
-                    cycleMidiIn(CCoscwaveformA, patchMidiData.waveformA, delta, WAVEFORMS_A);
-                    return;
-                }
-                case 2: {
-                    cycleMidiIn(CCpwA, patchMidiData.pWA, delta, LINEARCENTREZERO);
-                    return;
-                }
-                case 3: /*OSC MIX*/ {
-                    cycleMidiIn(CCoscMix, patchMidiData.oscMix, delta, 128, true);
-                    return;
-                }
+                case 0: cycleMidiIn(CCpitchA, patchMidiData.pitchA, delta, PITCH); return;
+                case 1: cycleMidiIn(CCoscwaveformA, patchMidiData.waveformA, delta, WAVEFORMS_A); return;
+                case 2: cycleMidiIn(CCpwA, patchMidiData.pWA, delta, LINEARCENTREZERO); return;
+                case 3: /*OSC MIX*/ cycleMidiIn(CCoscMix, patchMidiData.oscMix, delta, 128, true); return;
             }
             break;
         case Section::Osc2:
             switch(encIndex) {
-                case 0:{
-                    cycleMidiIn(CCpitchB, patchMidiData.pitchB, delta, PITCH);
-                    return;
-                }
-                case 1:{
-                    cycleMidiIn(CCoscwaveformB, patchMidiData.waveformB, delta, WAVEFORMS_B);
-                    return;
-                }
-                case 2: {
-                    cycleMidiIn(CCpwB, patchMidiData.pWB, delta, LINEARCENTREZERO);
-                    return;
-                }
-
-                case 3: /*detune*/ {
-                    cycleMidiIn(CCdetune, patchMidiData.detune, delta, POWER);
-                    return;
-                }
+                case 0: cycleMidiIn(CCpitchB, patchMidiData.pitchB, delta, PITCH); return;
+                case 1:cycleMidiIn(CCoscwaveformB, patchMidiData.waveformB, delta, WAVEFORMS_B); return;
+                case 2: cycleMidiIn(CCpwB, patchMidiData.pWB, delta, LINEARCENTREZERO); return;
+                case 3: /*detune*/ cycleMidiIn(CCdetune, patchMidiData.detune, delta, POWER); return;
             }
             break;
         case Section::Noise:
             // "Noise", "Env", "PWM Rate", "Osc FX"
             switch(encIndex) {
-                case 0:{
-                    cycleMidiIn(CCnoiseLevel, patchMidiData.noiseLevel, delta, 128, true);
-                    return;
-                }
-                case 1:{
-                    cycleMidiIn(CCpitchenv, patchMidiData.pitchEnv, delta, 128, true);
-                    return;
-                }
-                case 2: {
-                    cycleMidiIn(CCpwmRate, patchMidiData.pWMRate, delta, PWMRATE, true);
-                    return;
-                }
-                case 3: {
-                    cycleMidiIn(CCoscfx, patchMidiData.oscFX, sign, 3);
-                    return;
-                }
+                case 0:cycleMidiIn(CCnoiseLevel, patchMidiData.noiseLevel, delta, 128, true);return;
+                case 1:cycleMidiIn(CCpitchenv, patchMidiData.pitchEnv, delta, 128, true);return;
+                case 2: cycleMidiIn(CCpwmRate, patchMidiData.pWMRate, delta, PWMRATE, true);return;
+                case 3: cycleMidiIn(CCoscfx, patchMidiData.oscFX, sign, 3);return;
             }
             break;
         case Section::LFO:
@@ -1603,30 +1574,10 @@ void updateSection(byte encIndex, bool moveUp) {
         case Section::FilterEnvelope:
             // "ATK", "DECAY", "SUSTN", "REL"
             switch(encIndex) {
-                case 0:{
-                    auto newVal = cycleIndexOfSorted(ENVTIMES, (uint16_t) groupvec[activeGroupIndex]->getFilterAttack(), moveUp, false);
-                    midiCCOut(CCfilterattack, newVal);
-                    myControlChange(midiChannel, CCfilterattack, newVal);
-                    return;
-                }
-                case 1:{
-                    auto newVal = cycleIndexOfSorted(ENVTIMES, (uint16_t) groupvec[activeGroupIndex]->getFilterDecay(), moveUp, false);
-                    midiCCOut(CCfilterdecay, newVal);
-                    myControlChange(midiChannel, CCfilterdecay, newVal);
-                    return;
-                }
-                case 2: {
-                    auto newVal = cycleIndexOfSorted(LINEAR, groupvec[activeGroupIndex]->getFilterSustain(), moveUp, false);
-                    midiCCOut(CCfiltersustain, newVal);
-                    myControlChange(midiChannel, CCfiltersustain, newVal);
-                    return;
-                }
-                case 3: {
-                    auto newVal = cycleIndexOfSorted(ENVTIMES, (uint16_t) groupvec[activeGroupIndex]->getFilterRelease(), moveUp, false);
-                    midiCCOut(CCfilterrelease, newVal);
-                    myControlChange(midiChannel, CCfilterrelease, newVal);
-                    return;
-                }
+                case 0:cycleMidiIn(CCfilterattack, patchMidiData.filterAttack, delta, ENVTIMES, true);return;
+                case 1:cycleMidiIn(CCfilterdecay, patchMidiData.filterDecay, delta, ENVTIMES, true);return;
+                case 2: cycleMidiIn(CCfiltersustain, patchMidiData.filterSustain, delta, LINEAR, true);return;
+                case 3: cycleMidiIn(CCfilterrelease, patchMidiData.filterRelease, delta, ENVTIMES, true);return;
             }
             break;
         case Section::Filter:
@@ -1718,28 +1669,21 @@ void updateSection(byte encIndex, bool moveUp) {
         case Section::Amp:
             // "ATK", "DECAY", "SUSTN", "REL"
             switch(encIndex) {
+
                 case 0:{
-                    auto newVal = cycleIndexOfSorted(ENVTIMES, (uint16_t) groupvec[activeGroupIndex]->getAmpAttack(), moveUp, false);
-                    midiCCOut(CCampattack, newVal);
-                    myControlChange(midiChannel, CCampattack, newVal);
+                    cycleMidiIn(CCampattack, patchMidiData.attack, delta, ENVTIMES, true);
                     return;
                 }
                 case 1:{
-                    auto newVal = cycleIndexOfSorted(ENVTIMES, (uint16_t) groupvec[activeGroupIndex]->getAmpDecay(), moveUp, false);
-                    midiCCOut(CCampdecay, newVal);
-                    myControlChange(midiChannel, CCampdecay, newVal);
+                    cycleMidiIn(CCampdecay, patchMidiData.decay, delta, ENVTIMES, true);
                     return;
                 }
                 case 2: {
-                    auto newVal = cycleIndexOfSorted(LINEAR, groupvec[activeGroupIndex]->getAmpSustain(), moveUp, false);
-                    midiCCOut(CCampsustain, newVal);
-                    myControlChange(midiChannel, CCampsustain, newVal);
+                    cycleMidiIn(CCampsustain, patchMidiData.sustain, delta, LINEAR, true);
                     return;
                 }
                 case 3: {
-                    auto newVal = cycleIndexOfSorted(ENVTIMES, (uint16_t) groupvec[activeGroupIndex]->getAmpRelease(), moveUp, false);
-                    midiCCOut(CCamprelease, newVal);
-                    myControlChange(midiChannel, CCamprelease, newVal);
+                    cycleMidiIn(CCamprelease, patchMidiData.release, delta, ENVTIMES, true);
                     return;
                 }
             }
