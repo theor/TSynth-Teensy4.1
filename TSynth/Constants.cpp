@@ -60,10 +60,10 @@ const String SectionControls[9][4] = {
         { "PITCH", "WAVEFORM", "PWM AMT", "OSC MIX"}, // OSC1
         { "PITCH", "WAVEFORM", "PWM AMT", "DETUNE"}, // OSC2
         { "NOISE", "ENV", "PWM RATE", "OSC FX"}, // NOISE
-        { "LEVEL", "WAVEFORM", "RATE", "UNISON"}, // LFO
+        { "LEVEL", "WAVEFORM", "RATE", "RTR/UNISN"}, // LFO
         { "ATK", "DECAY", "SUSTN", "REL"}, // FILTERENVELOPE
         { "CUTOFF", "RESONANCE", "TYPE", "ENV"}, // FILTER
-        { "LEVEL", "WAVEFORM", "RATE", "RETRIG/TEMPO"}, // FILTERLFO
+        { "LEVEL", "WAVEFORM", "RATE", "RTRG/TMPO"}, // FILTERLFO
         { "ATK", "DECAY", "SUSTN", "REL"}, // AMP
         { "GLIDE", "FX AMT", "FX MIX", ""}, // FX
 };

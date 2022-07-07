@@ -429,10 +429,6 @@ FLASHMEM void renderCurrentParameterPage() {
       tft.setCursor(1, 90);
       tft.setTextColor(ST7735_WHITE);
       tft.println(currentValue);
-      if (pickUpActive) {
-        tft.fillCircle(150, 70, 5, ST77XX_DARKGREY);
-        tft.drawFastHLine(146, 70, 4, ST7735_WHITE);
-      }
       switch (paramType) {
         case PULSE:
           renderPulseWidth(currentFloatValue);
@@ -632,10 +628,8 @@ void displayThread() {
     switch (state) {
       case PARAMETER:
         if ((millis() - timer) > DISPLAYTIMEOUT) {
-          pickUpActive = false;
           renderCurrentPatchPage();
         } else {
-          pickUpActive = pickUp;
           renderCurrentParameterPage();
         }
         break;
