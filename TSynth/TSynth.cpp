@@ -264,15 +264,16 @@ FLASHMEM void updatePitchB(uint8_t pitchMidi)
   showCurrentParameterPage(F("2. Semitones"), (pitch > 0 ? "+" : "") + String(pitch));
 }
 
-FLASHMEM void updateDetune(float detune, uint32_t chordDetune)
+FLASHMEM void updateDetune(uint8_t detuneMidi)
 {
+    float detune = 1.0f - (MAXDETUNE * POWER[detuneMidi]);
   groupvec[activeGroupIndex]->params().detune = detune;
-  groupvec[activeGroupIndex]->params().chordDetune = chordDetune;
+  groupvec[activeGroupIndex]->params().chordDetune = detuneMidi;
   groupvec[activeGroupIndex]->updateVoices();
 
   if (groupvec[activeGroupIndex]->params().unisonMode == 2)
   {
-    showCurrentParameterPage(F("Chord"), CDT_STR[chordDetune]);
+    showCurrentParameterPage(F("Chord"), CDT_STR[detuneMidi % 19]);
   }
   else
   {
@@ -734,7 +735,7 @@ void myControlChange(byte channel, byte control, byte value)
     break;
 
   case CCdetune:
-    updateDetune(1.0f - (MAXDETUNE * POWER[value]), value);
+    updateDetune(value);
     break;
 
   case CCpwmSource:
@@ -1093,7 +1094,7 @@ FLASHMEM String getPatchData(PatchMidiData data)
     String(data.effectMix) + F(",") +
     String(data.pitchEnv) + F(",") +
     String(velocitySens) + F(",") +
-    String(data.chordDetune) + F(",") +
+    /*String(data.chordDetune) +*/ F(",") +
     String(data.monophonic) + F(",") +
     String(0.0f) + F(",") +
     String(0.0f);
@@ -1107,7 +1108,7 @@ FLASHMEM void loadPatchMidiData(PatchMidiData data)
     updateNoiseLevel(data.noiseLevel);
     updateUnison(data.unison);
     updateOscFX(data.oscFX);
-    updateDetune(data.detune, data.chordDetune);
+    updateDetune(data.detune);
     lfoSyncFreq =data.lfoSyncFreq;
     midiClkTimeInterval =data.midiClkTimeInterval;
     lfoTempoValue =data.lfoTempoValue;
@@ -1185,13 +1186,16 @@ FLASHMEM void setCurrentPatchData(String data[])
 {
     updatePatch(data[0], patchNo, data[50].toInt());
     updateOscMix(patchMidiData.oscMix = fromMix(data[1].toFloat(), data[2].toFloat()));
-//    dbgMsg = String(data[1].toFloat()) + String(' ') + data[2].toFloat() + String(' ') + patchMidiData.oscMix;
 //    updateOscLevelA(data[1].toFloat());
 //    updateOscLevelB(data[2].toFloat());
     updateNoiseLevel(data[3].toFloat());
     updateUnison(data[4].toInt());
     updateOscFX(patchMidiData.oscFX = (uint8_t)data[5].toInt());
-    updateDetune(data[6].toFloat(), data[48].toInt());
+    // 1.0f - (MAXDETUNE * POWER[value]), value
+    float detunePower = (float)((1.0 - data[6].toFloat()) / MAXDETUNE);
+    // TODO if unison mode == 2, use patchMidiData.chordDetune
+    updateDetune(closest(POWER, detunePower, &patchMidiData.detune));
+//    dbgMsg = String(data[6].toFloat()) + String(' ')+ patchMidiData.detune+ String(' ') + data[48].toFloat();
     // Why is this MIDI Clock stuff part of the patch??
     lfoSyncFreq = data[7].toInt();
     midiClkTimeInterval = data[8].toInt();
@@ -1525,11 +1529,8 @@ void updateSection(byte encIndex, bool moveUp) {
                     return;
                 }
 
-                    // todo check. chord detune is an enum (unison 2 ?), detune (unison 1?) is a percent. pick a unit for each.
                 case 3: /*detune*/ {
-                    byte mux1Read = cycleByte((uint8_t)groupvec[activeGroupIndex]->params().chordDetune, moveUp, false);
-                    midiCCOut(CCdetune, mux1Read);
-                    myControlChange(midiChannel, CCdetune, mux1Read);
+                    cycleMidiIn(CCdetune, patchMidiData.detune, delta, POWER);
                     return;
                 }
             }

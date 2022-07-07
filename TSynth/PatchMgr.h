@@ -57,7 +57,7 @@ struct PatchMidiData {
     uint8_t effectMix; // 45
     uint8_t pitchEnv; // 46
     uint8_t velocitySens; // 47
-    uint8_t chordDetune; // 48
+//    uint8_t chordDetune; // 48
     uint8_t monophonic; //49
     uint8_t spare1; // 50
     uint8_t spare2; // 51
@@ -178,7 +178,7 @@ FLASHMEM void recallPatchMidiData(File patchFile, PatchMidiData* data){
                 case 45: data-> effectMix = value; break;
                 case 46: data-> pitchEnv = value; break;
                 case 47: data-> velocitySens = value; break;
-                case 48: data-> chordDetune = value; break;
+                case 48: /*data-> chordDetune = value;*/ break;
                 case 49: data-> monophonic = value; break;
                 case 50: data-> spare1 = value; break;
                 case 51: data-> spare2 = value; break;
